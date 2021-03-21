@@ -27,7 +27,12 @@ RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
 
 
 # Copy project files
+COPY . $GOPATH/src/robot/
+WORKDIR $GOPATH/src/robot
 
-WORKDIR $GOPATH/src/
+RUN go build
 
-EXPOSE 80
+CMD ["./gizmatron"]
+
+
+EXPOSE 8080
