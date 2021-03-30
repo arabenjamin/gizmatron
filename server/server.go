@@ -9,6 +9,8 @@ import (
 	"net/http"
 	_"os"
 	"time"
+	"github.com/arabenjamin/gizmatron/robot"
+
 )
 
 
@@ -54,6 +56,10 @@ func clientHash(req *http.Request) string {
 
 func ping(resp http.ResponseWriter, req *http.Request) {
 
+		/* TODO: Maybe rethink this*/ 
+	
+	//robot.BlinkBot()
+
 	thisRequest := map[string]interface{}{
 		"time":           time.Now().Unix(),
 		"client_address": req.RemoteAddr,
@@ -82,7 +88,7 @@ func Chain(f http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 	return f
 }
 
-func Start() error {
+func Start( bot *robot.Robot) error {
 
 	//fmt.Println("Starting WebApp")
 
@@ -91,6 +97,90 @@ func Start() error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ping", ping)
+
+	mux.HandleFunc("/bot-status", func(resp http.ResponseWriter, req *http.Request){
+
+		status := fmt.Sprintf("%v, is running", bot.Name)
+		if !bot.State {
+			status = fmt.Sprintf("%v, is not running", bot.Name)
+		}
+
+		thisRequest := map[string]interface{}{
+			"time":           time.Now().Unix(),
+			"client_address": req.RemoteAddr,
+			"resource":       req.URL.Path,
+			"user_agent":     req.Header["User-Agent"],
+			"client":         clientHash(req),
+		}
+	
+		thisResponse := map[string]interface{}{
+			"status":       status,
+			"botname":      bot.Name,
+			"this_request": thisRequest,
+		}
+	
+		logReq(req)
+		respond(resp, thisResponse)
+
+	})
+
+
+	mux.HandleFunc("/start-bot", func(resp http.ResponseWriter, req *http.Request){
+
+
+		status := fmt.Sprintf("%v, is already running", bot.Name)
+		if !bot.State {
+			status = fmt.Sprintf(" Starting %v", bot.Name)
+			bot.Start()
+		}
+
+		thisRequest := map[string]interface{}{
+			"time":           time.Now().Unix(),
+			"client_address": req.RemoteAddr,
+			"resource":       req.URL.Path,
+			"user_agent":     req.Header["User-Agent"],
+			"client":         clientHash(req),
+		}
+	
+		thisResponse := map[string]interface{}{
+			"status":       status,
+			"botname":      bot.Name,
+			"this_request": thisRequest,
+		}
+	
+		logReq(req)
+		respond(resp, thisResponse)
+
+	})
+
+
+	mux.HandleFunc("/stop-bot", func(resp http.ResponseWriter, req *http.Request){
+
+		status := fmt.Sprintf("%v, is not running", bot.Name)
+		if bot.State {
+			bot.Stop()
+		} 
+
+		thisRequest := map[string]interface{}{
+			"time":           time.Now().Unix(),
+			"client_address": req.RemoteAddr,
+			"resource":       req.URL.Path,
+			"user_agent":     req.Header["User-Agent"],
+			"client":         clientHash(req),
+		}
+	
+		thisResponse := map[string]interface{}{
+			"status":       status,
+			"botname":      bot.Name,
+			"this_request": thisRequest,
+		}
+	
+		logReq(req)
+		respond(resp, thisResponse)
+
+	})
+
+
 	//mux.HandleFunc("/ping", Chain(ping, logger(thisLogger)))
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil{
