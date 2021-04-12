@@ -124,14 +124,13 @@ func Start( bot *robot.Robot) error {
 
 	})
 
-
-	mux.HandleFunc("/start-bot", func(resp http.ResponseWriter, req *http.Request){
+	mux.HandleFunc("/bot-start", func(resp http.ResponseWriter, req *http.Request){
 
 
 		status := fmt.Sprintf("%v, is already running", bot.Name)
 		if !bot.State {
 			status = fmt.Sprintf(" Starting %v", bot.Name)
-			bot.Start()
+			go bot.Start()
 		}
 
 		thisRequest := map[string]interface{}{
@@ -153,12 +152,11 @@ func Start( bot *robot.Robot) error {
 
 	})
 
-
-	mux.HandleFunc("/stop-bot", func(resp http.ResponseWriter, req *http.Request){
+	mux.HandleFunc("/bot-stop", func(resp http.ResponseWriter, req *http.Request){
 
 		status := fmt.Sprintf("%v, is not running", bot.Name)
 		if bot.State {
-			bot.Stop()
+			go bot.Stop()
 		} 
 
 		thisRequest := map[string]interface{}{

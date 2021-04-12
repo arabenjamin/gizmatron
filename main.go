@@ -5,7 +5,6 @@ import (
 
 	"os"
 	"log"
-	"fmt"
 	"github.com/arabenjamin/gizmatron/server"
 	"github.com/arabenjamin/gizmatron/robot"
 )
@@ -14,30 +13,24 @@ import (
 
 
 func main() {
-	/* Strart the server */
-	thisLogger := log.New(os.Stdout, "http: ", log.LstdFlags)
-	thisLogger.Println("Starting Gizmatron api server...")
-
 	
-	//thisLogger.Println(robot.LED_PIN)
-	//robot.Blink()
-	fmt.Println(robot.RobotName())
-	thisLogger.Println(robot.RobotName())
-	//go robot.BlinkFromPCA()
-
+	thisLogger := log.New(os.Stdout, "http: ", log.LstdFlags)
+	
+	thisLogger.Println("Starting Gizmatron")
 	bot, oops := robot.InitRobot()
 	if oops != nil {
 
 		thisLogger.Println("something real bad happened to the bot ... going down ...")
 		thisLogger.Println(oops)
 	}
+	log.Printf("Robot: %v initialized", bot.Name)
 
+	/* Strart the server */
+	thisLogger.Println("Starting Gizmatron api server...")
 	err := server.Start(bot)
 	if err != nil{
-		thisLogger.Println("something real bad happened ... going down ...")
+		thisLogger.Println("something real bad happened to the server ... going down ...")
 		thisLogger.Println(err)
 	}
-
-	
 
 }

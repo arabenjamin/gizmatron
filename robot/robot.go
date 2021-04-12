@@ -15,45 +15,49 @@ import (
 
 
 type Robot struct {
-
 	Name string
 	State bool
 	adaptor *raspi.Adaptor
-	arm *Arm
 	runningled *gpio.LedDriver
-	//servos *i2c.PCA9685Driver
+	arm *Arm
 }
-
 
 func InitRobot() (*Robot, error) {
 
 	log.Println("Initializing Bot")
 	robot := &Robot{
-
 		Name: "Gizmatron",
 		adaptor: raspi.NewAdaptor(),
-		
 	}
 
 	//robot.arm := InitArm(robot.adaptor)
-	robot.initDevices()
+	err := robot.initDevices()
+	if err != nil {
+
+		log.Printf("%v failed to intialize device: %v", robot.Name, err)
+		return nil, err
+	}
 
 	log.Println("Bot initialized")
-
 	return robot, nil
 }
 
-
-func (r *Robot) initDevices()  {
+func (r *Robot) initDevices() error {
 
 	// Setup Running Led
 	r.runningled = gpio.NewLedDriver(r.adaptor, strconv.Itoa(RUNNING_LED))
 	r.runningled.Start()
 
 	// Setup Arm
-	r.arm = InitArm(r.adaptor)
-}
+	arm, err := InitArm(r.adaptor)
+	if err != nil {
+		log.Printf("%v failed to initialize Arm: %v", r.Name, err)
+		return err
+	}
+	r.arm = arm
 
+	return nil
+}
 
 func (r *Robot) Start() (bool, error) {
 	log.Println("starting Bot")
