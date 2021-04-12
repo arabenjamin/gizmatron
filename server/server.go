@@ -186,15 +186,3 @@ func Start( bot *robot.Robot) error {
 	}
 	return nil
 }
-/*
-func main() {
-
-	fmt.Println("Starting WebApp")
-
-	thisLogger := log.New(os.Stdout, "http: ", log.LstdFlags)
-	thisLogger.Println("Starting server...")
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/ping", Chain(ping, logger(thisLogger)))
-	http.ListenAndServe(":8080", mux)
-}*/
