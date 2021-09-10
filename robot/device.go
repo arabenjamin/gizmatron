@@ -5,20 +5,6 @@ import (
 	_"log"
 )
 
-
-const (
-
-	RUNNING_LED = 37
-	BASE_SERVO =  0
-	JOINT_1_SERVO = 1
-	JOINT_2_SERVO = 2
-	JOINT_3_SERVO = 3
-	JOINT_4_SERVO = 4
-
-)
-
-type Pin int
-
 /*
 	Our Servo and length of the link
 
@@ -42,10 +28,9 @@ type Pin int
 
 */
 type Servo struct{
-	pin 			int
-	acoords			cords // 
+	pin 			int   //  pysical pin number on PCA9685 servo connected to 
+	acoords			cords  
 	bcoords			cords 
-	
 	direction   	bool // invert values based on the pysical direction of the servo
 	min_degree  	byte
 	max_degree		byte

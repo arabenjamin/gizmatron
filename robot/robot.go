@@ -4,12 +4,21 @@ package robot
 
 import (
 
-	_"fmt"
 	_"time"
 	"log"
 	"strconv"
 	"gobot.io/x/gobot/drivers/gpio"
 	"gobot.io/x/gobot/platforms/raspi"
+)
+
+const (
+
+	RUNNING_LED = 37
+	BASE_SERVO =  0
+	JOINT_1_SERVO = 1
+	JOINT_2_SERVO = 2
+	JOINT_3_SERVO = 3
+	JOINT_4_SERVO = 4
 
 )
 
@@ -55,7 +64,6 @@ func (r *Robot) initDevices() error {
 		return err
 	}
 	r.arm = arm
-
 	return nil
 }
 
@@ -65,10 +73,11 @@ func (r *Robot) Start() (bool, error) {
 	err := r.runningled.On()
 	if err != nil {
 		log.Printf("Error Turning on Led: %v", err)
+		r.State = false
+		return r.State, err
 	}
 
 	r.arm.Start()
-
 	return r.State, nil
 }
 
@@ -78,12 +87,12 @@ func (r *Robot) Stop() (bool, error) {
 	err := r.runningled.Off()
 	if err != nil {
 		log.Printf("Error Turning Led Off: %v", err)
+		return false, err
 	}
 
 	r.arm.Stop()
-
 	return r.State, nil
 }
 
-
+func (r *Robot) Reset() error { return nil }
 

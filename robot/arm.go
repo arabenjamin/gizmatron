@@ -7,17 +7,39 @@ import (
 	"strconv"
 	_"math"
 	"gobot.io/x/gobot/platforms/raspi"
-	_"gobot.io/x/gobot/drivers/gpio"
 	"gobot.io/x/gobot/drivers/i2c"
-
 )
 
 /* 
-	An Arm is really a collection of joints and length
+	An Arm is really a collection of joints and lengths
 	Here we will use the servo to act as a joint and a length
 	And so an Arm in this case is a collection of servos.
 
 */
+
+/*
+	Our Servo and length of the link
+
+	Each zero == the rotational axis of the servo
+
+	                  Translated Up the y axis
+	          End Efector _  _                                     
+	                       0\_\            
+				             \_\
+	Initial state			 0|_|
+    _ _ _  _ _               0|_|
+	 0_ _||_ _|0|            /_/
+	_0_ _||_ _|0|    Base _0/_/
+
+
+	the distance between the middle servos is 2.8mm
+	the distance between the outter servos and the inner servos is 10.3mm
+
+	All of our math will be based on those lengths
+
+
+*/
+
 type Arm  struct {
 	adaptor *raspi.Adaptor
 	name    string
