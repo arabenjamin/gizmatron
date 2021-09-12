@@ -88,7 +88,7 @@ ENV GOLANG_FILE go1.15.3.linux-armv6l.tar.gz
 ENV GOLANG_URL "https://golang.org/dl/"
  
 RUN apk update && apk add --no-cache git wget gcc bash libc6-compat musl-dev openssl-dev ca-certificates && update-ca-certificates
-RUN git config --global url."https://af946a398a47e6b6ac4aecbaf0191d45febbe4fa:@github.com/".insteadOf "https://github.com/"
+RUN git config --global url."https://${GIT-TOKEN}:@github.com/".insteadOf "https://github.com/"
 
 RUN cd /usr/local && \ 
 	wget $GOLANG_URL$GOLANG_FILE && \
