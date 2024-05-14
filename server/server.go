@@ -178,7 +178,6 @@ func Start( bot *robot.Robot) error {
 
 	})
 
-
 	//mux.HandleFunc("/ping", Chain(ping, logger(thisLogger)))
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil{

@@ -22,7 +22,7 @@ import (
 
 	Each zero == the rotational axis of the servo
 
-	                  Translated Up the y axis
+	          Translated Up the y axis
 	          End Efector _  _                                     
 	                       0\_\            
 				             \_\
@@ -102,7 +102,7 @@ func InitArm(adaptor *raspi.Adaptor ) (*Arm, error)  {
 			return nil, err
 		}
 	}
-	log.Printf("JOINTS: %v", a.joints)
+	//log.Printf("JOINTS: %v", a.joints)
 	return a, nil 
 }
 

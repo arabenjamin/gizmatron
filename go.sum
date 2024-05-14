@@ -31,6 +31,7 @@ github.com/hashicorp/go-multierror v1.0.0/go.mod h1:dHtQlpGsu+cZNNAkkCN/P3hoUDHh
 github.com/hashicorp/go-multierror v1.1.1 h1:H5DkEtf6CXdFp0N0Em5UCwQpXMWke8IA0+lD48awMYo=
 github.com/hashicorp/go-multierror v1.1.1/go.mod h1:iw975J/qwKPdAO1clOe2L8331t/9/fmwbPZ6JB6eMoM=
 github.com/hybridgroup/go-ardrone v0.0.0-20140402002621-b9750d8d7b78/go.mod h1:YllNbhGM1UEcySxCv1BWK5lre7QLmJJ+O0ADUOo2nbc=
+github.com/hybridgroup/mjpeg v0.0.0-20140228234708-4680f319790e h1:xCcwD5FOXul+j1dn8xD16nbrhJkkum/Cn+jTd/u1LhY=
 github.com/hybridgroup/mjpeg v0.0.0-20140228234708-4680f319790e/go.mod h1:eagM805MRKrioHYuU7iKLUyFPVKqVV6um5DAvCkUtXs=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/konsorten/go-windows-terminal-sequences v1.0.3/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
@@ -88,6 +89,7 @@ gobot.io/x/gobot v1.15.0 h1:izWWWDmIQxp1L9CSpG21IgKorNKf3dFLedHl++mgk/U=
 gobot.io/x/gobot v1.15.0/go.mod h1:ag4QKZVP1gTX5QbuTrUvEuu5mPgK7DIGXHKIv18ooPA=
 gobot.io/x/gobot v1.15.1-0.20210127175256-97d23a5aec43 h1:nWdefZISLGFg6vY4to2BUtyUOZr7mP48wQJjpvjxrs0=
 gobot.io/x/gobot v1.15.1-0.20210127175256-97d23a5aec43/go.mod h1:CwlG5umITB/BP7qlwGdJ/LPtRu71jAXtv9hu3q+yhKo=
+gocv.io/x/gocv v0.21.0 h1:dVjagrupZrfCRY0qPEaYWgoNMRpBel6GYDH4mvQOK8Y=
 gocv.io/x/gocv v0.21.0/go.mod h1:Rar2PS6DV+T4FL+PM535EImD/h13hGVaHhnCu1xarBs=
 golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=

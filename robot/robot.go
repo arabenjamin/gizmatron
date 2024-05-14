@@ -7,6 +7,7 @@ import (
 	_"time"
 	"log"
 	"strconv"
+	"gobot.io/x/gobot"
 	"gobot.io/x/gobot/drivers/gpio"
 	"gobot.io/x/gobot/platforms/raspi"
 )
@@ -22,18 +23,29 @@ const (
 
 )
 
+/*
+type Device Driver
+*/
+
+type device interface {
+
+	Start()
+	Stop()
+
+}
 
 type Robot struct {
 	Name string
 	State bool
 	adaptor *raspi.Adaptor
+
 	runningled *gpio.LedDriver
 	arm *Arm
 }
 
 func InitRobot() (*Robot, error) {
 
-	log.Println("Initializing Bot")
+	log.Println("Initializing startup ")
 	robot := &Robot{
 		Name: "Gizmatron",
 		adaptor: raspi.NewAdaptor(),
@@ -44,10 +56,10 @@ func InitRobot() (*Robot, error) {
 	if err != nil {
 
 		log.Printf("%v failed to intialize device: %v", robot.Name, err)
-		return nil, err
+		// return nil, err
 	}
 
-	log.Println("Bot initialized")
+	log.Println("Startup Complete")
 	return robot, nil
 }
 
@@ -57,11 +69,13 @@ func (r *Robot) initDevices() error {
 	r.runningled = gpio.NewLedDriver(r.adaptor, strconv.Itoa(RUNNING_LED))
 	r.runningled.Start()
 
+	
+
 	// Setup Arm
 	arm, err := InitArm(r.adaptor)
 	if err != nil {
 		log.Printf("%v failed to initialize Arm: %v", r.Name, err)
-		return err
+		//return err
 	}
 	r.arm = arm
 	return nil
