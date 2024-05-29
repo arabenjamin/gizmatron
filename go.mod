@@ -8,6 +8,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hybridgroup/mjpeg v0.0.0-20140228234708-4680f319790e
 	github.com/kr/text v0.2.0 // indirect
+	github.com/stianeikeland/go-rpio v4.2.0+incompatible // indirect
 	github.com/warthog618/go-gpiocdev v0.9.0 // indirect
 	gobot.io/x/gobot v1.15.1-0.20210127175256-97d23a5aec43
 	gocv.io/x/gocv v0.21.0

@@ -105,7 +105,7 @@ RUN go version && go env
 RUN go get -u -d gocv.io/x/gocv
 RUN go get -u github.com/hybridgroup/mjpeg
 RUN go get -u github.com/stianeikeland/go-rpio
-RUN go get github.com/warthog618/go-gpiocdev
+#RUN go get github.com/warthog618/go-gpiocdev
 #COPY gocv/ $GOPATH/src/gocv/
 
 RUN ls 

@@ -28,7 +28,8 @@ RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
 # Copy project files
 COPY . $GOPATH/src/robot/
 WORKDIR $GOPATH/src/robot
-RUN go get -d github.com/warthog618/go-gpiocdev
+#RUN go get -d github.com/warthog618/go-gpiocdev
+RUN go get -u github.com/stianeikeland/go-rpio
 
 RUN go build
 

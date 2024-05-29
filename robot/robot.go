@@ -4,7 +4,8 @@ import (
 	"log"
 	_ "time"
 
-	"github.com/warthog618/go-gpiocdev"
+	"github.com/stianeikeland/go-rpio"
+	_ "github.com/warthog618/go-gpiocdev"
 	_ "gobot.io/x/gobot"
 	"gobot.io/x/gobot/drivers/gpio"
 	"gobot.io/x/gobot/platforms/raspi"
@@ -31,14 +32,16 @@ type device interface {
 }
 
 type Robot struct {
-	Name       string
-	State      bool
-	adaptor    *raspi.Adaptor
-	runningled *gpiocdev.Line
-	serverled  *gpio.LedDriver
-	armled     *gpio.LedDriver
-	arm        *Arm
-	Devices    map[string]interface{}
+	Name    string
+	State   bool
+	adaptor *raspi.Adaptor
+	//runningled *gpiocdev.Line
+	runningled rpio.Pin
+	//runningled *gpio.LedDriver
+	serverled *gpio.LedDriver
+	armled    *gpio.LedDriver
+	arm       *Arm
+	Devices   map[string]interface{}
 }
 
 func InitRobot() (*Robot, error) {
@@ -64,11 +67,18 @@ func InitRobot() (*Robot, error) {
 
 func (r *Robot) initDevices() error {
 
-	r.runningled, _ = gpiocdev.RequestLine("gpiochip0", RUNNING_LED, gpiocdev.AsOutput(0))
+	//r.runningled, _ = gpiocdev.RequestLine("gpiochip0", RUNNING_LED, gpiocdev.AsOutput(0))
 
 	//defer REDLED.Close()
 
 	// Setup Running Led ( Green LED on pin 37 )
+
+	rpio.Open()
+	defer rpio.Close()
+
+	r.runningled = rpio.Pin(RUNNING_LED)
+	r.runningled.Output()
+
 	/*
 		r.runningled = gpio.NewLedDriver(r.adaptor, strconv.Itoa(RUNNING_LED))
 		r.runningled.Start()
@@ -76,8 +86,9 @@ func (r *Robot) initDevices() error {
 		if runningLederr != nil {
 			log.Printf("Error Turning on Running LED: %v", runningLederr)
 			r.Devices["runningLedError"] = runningLederr
-		}
+		}*/
 
+	/*
 		//Setup Server LED ( Blue LED on pin ...)
 		r.serverled = gpio.NewLedDriver(r.adaptor, strconv.Itoa(SEVER_LED))
 		r.serverled.Start()
@@ -112,14 +123,15 @@ func (r *Robot) initDevices() error {
 func (r *Robot) Start() (bool, error) {
 	log.Println("starting Bot")
 	r.State = true
-	r.runningled.SetValue(1)
-	/*err := r.runningled.On()
+
+	//r.runningled.SetValue(1)
+	err := r.runningled.On()
 	if err != nil {
 		log.Printf("Error Turning on Led: %v", err)
 		r.State = false
 
 		return r.State, err
-	}*/
+	}
 
 	r.arm.Start()
 	return r.State, nil
