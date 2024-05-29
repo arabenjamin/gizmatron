@@ -22,7 +22,7 @@ func main() {
 
 		The bot should NEVER fail to initialize,
 		though it may initialize without the use of some components.
-		This is here so we can go figure out what anyother catastophic event happend. 
+		This is here so we can go figure out what any other catastophic event happend. 
 	*/
 	bot, oops := robot.InitRobot()
 	if oops != nil {

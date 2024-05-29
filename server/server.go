@@ -115,6 +115,7 @@ func Start( bot *robot.Robot) error {
 	
 		thisResponse := map[string]interface{}{
 			"status":       status,
+			"device_status": bot.Devices,
 			"botname":      bot.Name,
 			"this_request": thisRequest,
 		}
@@ -143,6 +144,7 @@ func Start( bot *robot.Robot) error {
 	
 		thisResponse := map[string]interface{}{
 			"status":       status,
+			"device_status": bot.Devices,
 			"botname":      bot.Name,
 			"this_request": thisRequest,
 		}
@@ -169,6 +171,7 @@ func Start( bot *robot.Robot) error {
 	
 		thisResponse := map[string]interface{}{
 			"status":       status,
+			"device_status": bot.Devices,
 			"botname":      bot.Name,
 			"this_request": thisRequest,
 		}

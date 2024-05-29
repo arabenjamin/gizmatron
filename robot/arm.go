@@ -41,6 +41,7 @@ import (
 */
 
 type Arm  struct {
+	err 	error
 	adaptor *raspi.Adaptor
 	name    string
 	driver  *i2c.PCA9685Driver
@@ -88,7 +89,8 @@ func InitArm(adaptor *raspi.Adaptor ) (*Arm, error)  {
 	err :=  a.driver.Start()
 	if err != nil {
 		log.Printf("Could not start Arm Device: %v", err)
-		return nil, err
+		a.err = err
+		return a, err
 	}
 
 	// set the PWM Frequency
@@ -98,8 +100,9 @@ func InitArm(adaptor *raspi.Adaptor ) (*Arm, error)  {
 		// TODO: Update this to use the Update method
 		err := a.driver.ServoWrite(strconv.Itoa(v.pin), v.init_degree)
 		if err != nil {
+			a.err = err
 			log.Printf("Falied to write to servo:  Error: %v", err)
-			return nil, err
+			return a, err
 		}
 	}
 	//log.Printf("JOINTS: %v", a.joints)
