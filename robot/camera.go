@@ -1,20 +1,19 @@
 package robot
 
-
 import (
-    "os"
+	_ "bytes"
 	"fmt"
-	_"bytes"
-	_"log"
-	_"image"
-	_"strconv"
-	_"net/http"
-	"gocv.io/x/gocv"
+	_ "image"
 	"image/color"
+	_ "log"
+	_ "net/http"
+	"os"
+	_ "strconv"
 	"sync"
 
-	"github.com/hybridgroup/mjpeg"
+	"gocv.io/x/gocv"
 
+	"github.com/hybridgroup/mjpeg"
 )
 
 /* Takes picture saves as .jpeg*/
@@ -45,15 +44,14 @@ func TakePicture() {
 }
 */
 
-type Cam  struct {
-	err error
+type Cam struct {
+	err    error
 	Webcam *gocv.VideoCapture
 	ImgMat gocv.Mat
-	Stream   *mjpeg.Stream
+	Stream *mjpeg.Stream
 	//Img *image.Image
 	mux sync.Mutex
 }
-
 
 func (c *Cam) InitCam() error {
 
@@ -69,17 +67,17 @@ func (c *Cam) InitCam() error {
 	return nil
 }
 
-func (c *Cam) CloseCam(){
+func (c *Cam) CloseCam() {
 	fmt.Println("Camera closed")
 	c.Webcam.Close()
 }
 
-func (c *Cam) Restart(){
+func (c *Cam) Restart() {
 	c.CloseCam()
 	c.InitCam()
 }
 
-func (c *Cam) Start(){
+func (c *Cam) Start() {
 
 	// prepare image matrix
 	c.ImgMat = gocv.NewMat()
@@ -87,7 +85,6 @@ func (c *Cam) Start(){
 
 	// create the mjpeg stream
 	c.Stream = mjpeg.NewStream()
-
 
 	for {
 		if ok := c.Webcam.Read(&c.ImgMat); !ok {
@@ -101,14 +98,13 @@ func (c *Cam) Start(){
 			//c.mux.Lock()
 			//c.FaceDetect()
 			buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
-			c.Stream.UpdateJPEG(buf)
+			c.Stream.UpdateJPEG(buf.GetBytes())
 			//c.mux.Unlock()
 		}
 	}
 }
 
-
-func (c *Cam) FaceDetect(){
+func (c *Cam) FaceDetect() {
 
 	// color for the rect when faces detected
 	blue := color.RGBA{0, 0, 255, 0}
@@ -128,7 +124,7 @@ func (c *Cam) FaceDetect(){
 	}
 
 	for {
-		if !c.ImgMat.Empty(){
+		if !c.ImgMat.Empty() {
 			// detect faces
 			//c.mux.Lock()
 			rects := classifier.DetectMultiScale(c.ImgMat)
@@ -147,6 +143,3 @@ func (c *Cam) FaceDetect(){
 	}
 
 }
-
-
-

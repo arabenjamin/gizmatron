@@ -1,0 +1,38 @@
+FROM gocv/opencv:latest
+
+
+# Install and configure Go
+
+ENV PKG_CONFIG_PATH /usr/local/lib64/pkgconfig
+ENV LD_LIBRARY_PATH /usr/local/lib64
+ENV CGO_CPPFLAGS -I/usr/local/include
+ENV CGO_CXXFLAGS "--std=c++1z"
+ENV CGO_LDFLAGS "-L/usr/local/lib -lopencv_core -lopencv_face -lopencv_videoio -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs -lopencv_objdetect -lopencv_features2d -lopencv_video -lopencv_dnn -lopencv_xfeatures2d -lopencv_plot -lopencv_tracking"
+
+# configure Go
+ENV GOROOT /usr/local/go
+ENV GOPATH /go
+ENV PATH $GOROOT/bin:$PATH
+
+# Set GOPATH mode
+RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
+ENV PATH /go/bin:$PATH
+
+COPY . $GOPATH/src/robot/
+WORKDIR $GOPATH/src/robot
+
+RUN go version && go env
+
+RUN go install gocv.io/x/gocv
+#RUN go get -u github.com/hybridgroup/mjpeg
+RUN go install github.com/hybridgroup/mjpeg
+RUN go get github.com/warthog618/go-gpiocdev
+RUN go install github.com/warthog618/go-gpiocdev
+
+
+RUN go build
+
+CMD ["echo", "'Hello World'"]
+CMD ["./gizmatron"]
+
+EXPOSE 8080

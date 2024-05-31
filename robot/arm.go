@@ -1,16 +1,16 @@
 package robot
 
 import (
-
 	"log"
-	"time"
+	_ "math"
 	"strconv"
-	_"math"
-	"gobot.io/x/gobot/platforms/raspi"
-	"gobot.io/x/gobot/drivers/i2c"
+	"time"
+
+	"gobot.io/x/gobot/v2/drivers/i2c"
+	"gobot.io/x/gobot/v2/platforms/raspi"
 )
 
-/* 
+/*
 	An Arm is really a collection of joints and lengths
 	Here we will use the servo to act as a joint and a length
 	And so an Arm in this case is a collection of servos.
@@ -23,8 +23,8 @@ import (
 	Each zero == the rotational axis of the servo
 
 	          Translated Up the y axis
-	          End Efector _  _                                     
-	                       0\_\            
+	          End Efector _  _
+	                       0\_\
 				             \_\
 	Initial state			 0|_|
     _ _ _  _ _               0|_|
@@ -40,18 +40,18 @@ import (
 
 */
 
-type Arm  struct {
-	err 	error
+type Arm struct {
+	err     error
 	adaptor *raspi.Adaptor
 	name    string
 	driver  *i2c.PCA9685Driver
-	pins 	[]int
-	joints 	[]*Servo
-	x_max 	int
-	y_max 	int
+	pins    []int
+	joints  []*Servo
+	x_max   int
+	y_max   int
 }
-	
-func InitArm(adaptor *raspi.Adaptor ) (*Arm, error)  {
+
+func InitArm(adaptor *raspi.Adaptor) (*Arm, error) {
 
 	pins := []int{
 		BASE_SERVO,
@@ -68,25 +68,24 @@ func InitArm(adaptor *raspi.Adaptor ) (*Arm, error)  {
 
 	s2 := NewServo(true, pins[2], 2.8)
 	servos = append(servos, s2)
- 
+
 	s3 := NewServo(false, pins[3], 10.3)
 	servos = append(servos, s3)
 
 	s4 := NewServo(false, pins[4], 2.0)
 	servos = append(servos, s4)
-	
+
 	a := &Arm{
 		adaptor: adaptor,
-		driver: i2c.NewPCA9685Driver(adaptor),
-		name: "Gizmatron Arm",
-		pins: pins,
-		joints: servos,	
-		x_max: 20,
-		y_max: 20,
-		
+		driver:  i2c.NewPCA9685Driver(adaptor),
+		name:    "Gizmatron Arm",
+		pins:    pins,
+		joints:  servos,
+		x_max:   20,
+		y_max:   20,
 	}
 
-	err :=  a.driver.Start()
+	err := a.driver.Start()
 	if err != nil {
 		log.Printf("Could not start Arm Device: %v", err)
 		a.err = err
@@ -106,29 +105,29 @@ func InitArm(adaptor *raspi.Adaptor ) (*Arm, error)  {
 		}
 	}
 	//log.Printf("JOINTS: %v", a.joints)
-	return a, nil 
+	return a, nil
 }
 
 /* Update servo*/
-func (a *Arm) Update(pin int, speed int) error{
+func (a *Arm) Update(pin int, speed int) error {
 	// Update this servo
 	servo := a.joints[pin]
 	if servo.current_degree < servo.target_degree {
 
 		for servo.current_degree != servo.target_degree {
-			
+
 			time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
-			servo.current_degree = servo.current_degree + 1 
+			servo.current_degree = servo.current_degree + 1
 			err := a.driver.ServoWrite(strconv.Itoa(servo.pin), servo.current_degree)
 			if err != nil {
 				log.Printf("Falied to write to servo:  Error: %v", err)
 				return err
 			}
 		}
-	}else{
+	} else {
 
 		for servo.target_degree < servo.current_degree {
-			time.Sleep(time.Duration(1000*speed) * time.Nanosecond) 
+			time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
 			servo.current_degree = servo.current_degree - 1
 			err := a.driver.ServoWrite(strconv.Itoa(servo.pin), servo.current_degree)
 			if err != nil {
@@ -141,7 +140,7 @@ func (a *Arm) Update(pin int, speed int) error{
 }
 
 /* Put Arm in Start Position */
-func (a *Arm) Start() error { 
+func (a *Arm) Start() error {
 
 	a.joints[0].target_degree = 45
 	a.joints[1].target_degree = 45
@@ -149,7 +148,7 @@ func (a *Arm) Start() error {
 	a.joints[3].target_degree = 150
 
 	for i, v := range a.joints {
-		
+
 		log.Printf("Moving Joint: %v", v)
 		err := a.Update(i, 100)
 		if err != nil {
@@ -157,17 +156,17 @@ func (a *Arm) Start() error {
 			return err
 		}
 	}
-	return nil 
+	return nil
 }
 
 /* Put Arm in Stop Position */
-func (a *Arm) Stop() error { 
+func (a *Arm) Stop() error {
 
 	a.joints[0].target_degree = 0
 	a.joints[1].target_degree = 0
 	a.joints[2].target_degree = 170
 	a.joints[3].target_degree = 180
-	for i, v := range a.joints{
+	for i, v := range a.joints {
 
 		log.Printf("Moving Joint: %v", v)
 		err := a.Update(i, 2000)

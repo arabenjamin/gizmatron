@@ -4,15 +4,13 @@ import (
 	"log"
 	_ "time"
 
-	"github.com/stianeikeland/go-rpio"
-	_ "github.com/warthog618/go-gpiocdev"
-	_ "gobot.io/x/gobot"
-	"gobot.io/x/gobot/drivers/gpio"
-	"gobot.io/x/gobot/platforms/raspi"
+	"github.com/warthog618/go-gpiocdev"
+	_ "gobot.io/x/gobot/v2"
+	"gobot.io/x/gobot/v2/platforms/raspi"
 )
 
 const (
-	RUNNING_LED   = 26 //gpio 26 pin 37
+	RUNNING_LED   = 37 //gpio 26 pin 37
 	SEVER_LED     = 13 //gpio 13 pin 33
 	ARM_LED       = 5  //gpio 05 pin 29
 	BASE_SERVO    = 0
@@ -32,16 +30,14 @@ type device interface {
 }
 
 type Robot struct {
-	Name    string
-	State   bool
-	adaptor *raspi.Adaptor
-	//runningled *gpiocdev.Line
-	runningled rpio.Pin
-	//runningled *gpio.LedDriver
-	serverled *gpio.LedDriver
-	armled    *gpio.LedDriver
-	arm       *Arm
-	Devices   map[string]interface{}
+	Name       string
+	State      bool
+	adaptor    *raspi.Adaptor
+	runningled *gpiocdev.Line
+	//serverled  *gpiocdev.Line
+	//armled     *gpiocdev.Line
+	arm     *Arm
+	Devices map[string]interface{}
 }
 
 func InitRobot() (*Robot, error) {
@@ -67,17 +63,10 @@ func InitRobot() (*Robot, error) {
 
 func (r *Robot) initDevices() error {
 
-	//r.runningled, _ = gpiocdev.RequestLine("gpiochip0", RUNNING_LED, gpiocdev.AsOutput(0))
-
-	//defer REDLED.Close()
+	//r.runningled, runningLedErr = gpiocdev.RequestLine("gpiochip0", RUNNING_LED, gpiocdev.AsOutput(0))
+	r.runningled, _ = gpiocdev.RequestLine("gpiochip0", RUNNING_LED, gpiocdev.AsOutput(0))
 
 	// Setup Running Led ( Green LED on pin 37 )
-
-	rpio.Open()
-	defer rpio.Close()
-
-	r.runningled = rpio.Pin(RUNNING_LED)
-	r.runningled.Output()
 
 	/*
 		r.runningled = gpio.NewLedDriver(r.adaptor, strconv.Itoa(RUNNING_LED))
@@ -124,12 +113,13 @@ func (r *Robot) Start() (bool, error) {
 	log.Println("starting Bot")
 	r.State = true
 
-	//r.runningled.SetValue(1)
-	err := r.runningled.On()
+	err := r.runningled.SetValue(1)
 	if err != nil {
-		log.Printf("Error Turning on Led: %v", err)
-		r.State = false
 
+		//log.Printf("Error Turning on Led: %v", err)
+		r.State = false
+		log.Printf("Error Turning on Running LED: %v", err)
+		r.Devices["runningLedError"] = err
 		return r.State, err
 	}
 
@@ -140,12 +130,12 @@ func (r *Robot) Start() (bool, error) {
 func (r *Robot) Stop() (bool, error) {
 	log.Println("stoping Bot")
 	r.State = false
-	r.runningled.SetValue(0)
-	/*err := r.runningled.Off()
+
+	err := r.runningled.SetValue(0)
 	if err != nil {
 		log.Printf("Error Turning Led Off: %v", err)
 		return false, err
-	}*/
+	}
 
 	r.arm.Stop()
 	return r.State, nil
