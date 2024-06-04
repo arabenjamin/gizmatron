@@ -4,17 +4,12 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"github.com/arabenjamin/gizmatron/robot"
 	"io"
 	"log"
 	"net/http"
-	_"os"
 	"time"
-	"github.com/arabenjamin/gizmatron/robot"
-
 )
-
-
-
 
 /*Middleware Go wants a comment */
 type Middleware func(http.HandlerFunc) http.HandlerFunc
@@ -56,8 +51,8 @@ func clientHash(req *http.Request) string {
 
 func ping(resp http.ResponseWriter, req *http.Request) {
 
-		/* TODO: Maybe rethink this*/ 
-	
+	/* TODO: Maybe rethink this*/
+
 	//robot.BlinkBot()
 
 	thisRequest := map[string]interface{}{
@@ -88,20 +83,30 @@ func Chain(f http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 	return f
 }
 
-func Start( bot *robot.Robot) error {
+func Start(bot *robot.Robot) error {
 
 	//fmt.Println("Starting WebApp")
 
 	//thisLogger := log.New(os.Stdout, "http: ", log.LstdFlags)
 	//thisLogger.Println("Starting server...")
+	//Setup Server LED ( Blue LED on pin ...)
+	serverled, serverErr := robot.NewLedLine(13, "Sever Led")
+	if serverErr != nil {
+		log.Printf("Error Turning on Server LED: %v", serverErr)
+		bot.Devices["severledError"] = serverErr
+	}
+	bot.Serverled = serverled
+	// Turn the server led on now
+	// I may want to rethink the way the server light comes on.
+	bot.Serverled.SetValue(1)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ping", ping)
 
-	mux.HandleFunc("/bot-status", func(resp http.ResponseWriter, req *http.Request){
+	mux.HandleFunc("/bot-status", func(resp http.ResponseWriter, req *http.Request) {
 
 		status := fmt.Sprintf("%v, is running", bot.Name)
-		if !bot.State {
+		if !bot.IsRunning {
 			status = fmt.Sprintf("%v, is not running", bot.Name)
 		}
 
@@ -112,24 +117,23 @@ func Start( bot *robot.Robot) error {
 			"user_agent":     req.Header["User-Agent"],
 			"client":         clientHash(req),
 		}
-	
+
 		thisResponse := map[string]interface{}{
-			"status":       status,
+			"status":        status,
 			"device_status": bot.Devices,
-			"botname":      bot.Name,
-			"this_request": thisRequest,
+			"botname":       bot.Name,
+			"this_request":  thisRequest,
 		}
-	
+
 		logReq(req)
 		respond(resp, thisResponse)
 
 	})
 
-	mux.HandleFunc("/bot-start", func(resp http.ResponseWriter, req *http.Request){
-
+	mux.HandleFunc("/bot-start", func(resp http.ResponseWriter, req *http.Request) {
 
 		status := fmt.Sprintf("%v, is already running", bot.Name)
-		if !bot.State {
+		if !bot.IsRunning {
 			status = fmt.Sprintf(" Starting %v", bot.Name)
 			go bot.Start()
 		}
@@ -141,25 +145,25 @@ func Start( bot *robot.Robot) error {
 			"user_agent":     req.Header["User-Agent"],
 			"client":         clientHash(req),
 		}
-	
+
 		thisResponse := map[string]interface{}{
-			"status":       status,
+			"status":        status,
 			"device_status": bot.Devices,
-			"botname":      bot.Name,
-			"this_request": thisRequest,
+			"botname":       bot.Name,
+			"this_request":  thisRequest,
 		}
-	
+
 		logReq(req)
 		respond(resp, thisResponse)
 
 	})
 
-	mux.HandleFunc("/bot-stop", func(resp http.ResponseWriter, req *http.Request){
+	mux.HandleFunc("/bot-stop", func(resp http.ResponseWriter, req *http.Request) {
 
 		status := fmt.Sprintf("%v, is not running", bot.Name)
-		if bot.State {
+		if bot.IsRunning {
 			go bot.Stop()
-		} 
+		}
 
 		thisRequest := map[string]interface{}{
 			"time":           time.Now().Unix(),
@@ -168,14 +172,14 @@ func Start( bot *robot.Robot) error {
 			"user_agent":     req.Header["User-Agent"],
 			"client":         clientHash(req),
 		}
-	
+
 		thisResponse := map[string]interface{}{
-			"status":       status,
+			"status":        status,
 			"device_status": bot.Devices,
-			"botname":      bot.Name,
-			"this_request": thisRequest,
+			"botname":       bot.Name,
+			"this_request":  thisRequest,
 		}
-	
+
 		logReq(req)
 		respond(resp, thisResponse)
 
@@ -183,7 +187,7 @@ func Start( bot *robot.Robot) error {
 
 	//mux.HandleFunc("/ping", Chain(ping, logger(thisLogger)))
 	err := http.ListenAndServe(":8080", mux)
-	if err != nil{
+	if err != nil {
 		return err
 	}
 	return nil

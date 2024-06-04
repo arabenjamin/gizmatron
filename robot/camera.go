@@ -1,19 +1,13 @@
 package robot
 
 import (
-	_ "bytes"
 	"fmt"
-	_ "image"
-	"image/color"
-	_ "log"
-	_ "net/http"
-	"os"
-	_ "strconv"
-	"sync"
-
-	"gocv.io/x/gocv"
-
 	"github.com/hybridgroup/mjpeg"
+	"gocv.io/x/gocv"
+	"image/color"
+	"log"
+	"os"
+	"sync"
 )
 
 /* Takes picture saves as .jpeg*/
@@ -45,36 +39,42 @@ func TakePicture() {
 */
 
 type Cam struct {
-	err    error
-	Webcam *gocv.VideoCapture
-	ImgMat gocv.Mat
-	Stream *mjpeg.Stream
+	IsRunning bool
+	err       error
+	Webcam    *gocv.VideoCapture
+	ImgMat    gocv.Mat
+	Stream    *mjpeg.Stream
 	//Img *image.Image
 	mux sync.Mutex
 }
 
-func (c *Cam) InitCam() error {
-
-	c.Webcam, c.err = gocv.OpenVideoCapture(-1)
+func InitCam() (*Cam, error) {
+	c := &Cam{}
+	//c.Webcam, c.err = gocv.OpenVideoCapture(-1)
+	c.Webcam, c.err = gocv.VideoCaptureDevice(1)
+	//c.Webcam, c.err = gocv.OpenVideoCaptureWithAPI(1, 200)
 	if c.err != nil {
-		fmt.Println("error opening webcam")
-		return c.err
+		log.Printf("Error opening webcam")
+		c.IsRunning = false
+		return c, c.err
 	}
-	fmt.Println("Camera is Initiated")
+	defer c.Webcam.Close()
+	log.Printf("Camera is Initiated")
+	c.IsRunning = true
 
 	go c.Start()
-	go c.FaceDetect()
-	return nil
+	// go c.FaceDetect()
+	return c, nil
 }
 
 func (c *Cam) CloseCam() {
-	fmt.Println("Camera closed")
+	log.Printf("Camera closed")
 	c.Webcam.Close()
 }
 
 func (c *Cam) Restart() {
 	c.CloseCam()
-	c.InitCam()
+	c.Start()
 }
 
 func (c *Cam) Start() {
@@ -88,13 +88,13 @@ func (c *Cam) Start() {
 
 	for {
 		if ok := c.Webcam.Read(&c.ImgMat); !ok {
-			fmt.Println("Cannot read from Device")
+			log.Printf("Cannot read from Device")
 			//c.RestartCam()
 			return
 		}
 
 		if !c.ImgMat.Empty() {
-			//fmt.Println("Image Matrix is empty, moving forward ")
+			//log.Printf("Image Matrix is empty, moving forward ")
 			//c.mux.Lock()
 			//c.FaceDetect()
 			buf, _ := gocv.IMEncode(".jpg", c.ImgMat)

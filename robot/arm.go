@@ -42,6 +42,8 @@ import (
 
 type Arm struct {
 	err     error
+	State	bool
+	IsRunning bool
 	adaptor *raspi.Adaptor
 	name    string
 	driver  *i2c.PCA9685Driver
@@ -87,11 +89,13 @@ func InitArm(adaptor *raspi.Adaptor) (*Arm, error) {
 
 	err := a.driver.Start()
 	if err != nil {
-		log.Printf("Could not start Arm Device: %v", err)
+		log.Printf("Could not start Arm driver: %v", err)
 		a.err = err
+		a.IsRunning = false
 		return a, err
 	}
-
+	a.State = true
+	a.IsRunning = true
 	// set the PWM Frequency
 	a.driver.SetPWMFreq(50)
 
