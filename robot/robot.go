@@ -2,9 +2,9 @@ package robot
 
 import (
 	"fmt"
-	"log"
 	"github.com/warthog618/go-gpiocdev"
 	"gobot.io/x/gobot/v2/platforms/raspi"
+	"log"
 )
 
 const (
@@ -30,7 +30,7 @@ type device interface {
 type Robot struct {
 	Name       string
 	IsRunning  bool
-	State      bool // depreciated
+	State      bool           // depreciated
 	adaptor    *raspi.Adaptor // I really want to depreciate this
 	runningled *gpiocdev.Line
 	serverled  *gpiocdev.Line
@@ -50,7 +50,7 @@ func InitRobot() (*Robot, error) {
 	}
 
 	/* Start our devices*/
-	r.IsRunning = true
+	robot.IsRunning = true
 	err := robot.initDevices()
 	if err != nil {
 		// TODO: This error handler needs to be rethought.
@@ -58,11 +58,11 @@ func InitRobot() (*Robot, error) {
 		// we want it to tell us which devices have errors, not that initDevices()
 		// had errors
 		log.Printf("%v failed to intialize device: %v", robot.Name, err)
-		r.IsRunning = false
+		robot.IsRunning = false
 	}
-	
+
 	// Turn on our operating light
-	r.runningled.SetValue(1)
+	robot.runningled.SetValue(1)
 
 	log.Println("Startup Complete")
 	return robot, nil
@@ -76,7 +76,7 @@ func (r *Robot) initDevices() error {
 	// an empty list should mean that all the devices are runnning and operational
 
 	/* Setup our running LED*/
-	runningled, runLedErr := robot.NewLedLine(RUNNING_LED, "Running LED")
+	runningled, runLedErr := r.NewLedLine(RUNNING_LED, "Running LED")
 	if runLedErr != nil {
 
 		log.Printf("Warning !! Running LED Failec: %v", runLedErr)
@@ -89,7 +89,7 @@ func (r *Robot) initDevices() error {
 	/* Setup Arm */
 	arm, err := InitArm(r.adaptor)
 	if err != nil {
-		errmsg = fmt.Sprintf("Warning!! Arm Initialization Failed!: %v", err)
+		errmsg := fmt.Sprintf("Warning!! Arm Initialization Failed!: %v", err)
 		log.Printf(errmsg)
 		// TODO Set the arm error in the device status
 		r.Devices["armError"] = errmsg
@@ -98,9 +98,9 @@ func (r *Robot) initDevices() error {
 
 	if arm.IsRunning {
 
-		armled, armLedErr := robot.NewLedLine(ARM_LED, "Arm LED")
+		armled, armLedErr := r.NewLedLine(ARM_LED, "Arm LED")
 		if armLedErr != nil {
-			errMsg = fmt.Sprintf("Warning!! Arm LED Failed: %v", armLedErr)
+			errMsg := fmt.Sprintf("Warning!! Arm LED Failed: %v", armLedErr)
 			log.Printf(errMsg)
 			r.Devices["ArmLedError"] = armLedErr
 		}
@@ -111,7 +111,7 @@ func (r *Robot) initDevices() error {
 	/* Set up pur camera */
 	cam, camerr := InitCam()
 	if camerr != nil {
-		errMsg = fmt.Sprintf("Warning !! Camera Initialization Failed: %v", camerr)
+		errMsg := fmt.Sprintf("Warning !! Camera Initialization Failed: %v", camerr)
 		log.Printf(errMsg)
 		r.Devices["CameraError"] = camerr
 	}
@@ -126,13 +126,13 @@ func (r *Robot) initDevices() error {
 }
 
 func (r *Robot) Start() (bool, error) {
-	
+
 	log.Println("Starting Arm and Camera...")
-	
+
 	if r.arm.IsRunning {
 		r.armled.SetValue(1)
-		err = r.arm.Start(); !ok {
-			errMsg = fmt.Sprintf("Error Failed to move arm to starting position :%v", err)
+		if ok := r.arm.Start(); !ok {
+			errMg := fmt.Sprintf("Error Failed to move arm to starting position :%v", ok)
 			log.Printf(errMsg)
 			r.Devices["ArmError"] = errMsg
 		}
@@ -154,14 +154,13 @@ func (r *Robot) Stop() (bool, error) {
 
 	if r.arm.IsRunning {
 		r.armled.SetValue(0)
-		err = r.arm.Stop(); !ok {
-			errMsg = fmt.Sprintf("Error Faild to return arm to default positon:%v", err)
+		if ok := r.arm.Stop(); !ok {
+			errMsg := fmt.Sprintf("Error Faild to return arm to default positon:%v", ok)
 			log.Printf(errMsg)
 			r.Devices["ArmError"] = errMsg
 		}
 	}
-	
-
+	go r.camera.Close()
 	return r.IsRunning, nil
 }
 

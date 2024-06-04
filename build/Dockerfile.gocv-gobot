@@ -27,9 +27,9 @@ RUN go version && go env
 
 #RUN go install gocv.io/x/gocv
 #RUN go get -u github.com/hybridgroup/mjpeg
-RUN go install github.com/hybridgroup/mjpeg
-RUN go get github.com/warthog618/go-gpiocdev
-RUN go install github.com/warthog618/go-gpiocdev
+#RUN go install github.com/hybridgroup/mjpeg
+#RUN go get github.com/warthog618/go-gpiocdev
+#RUN go install github.com/warthog618/go-gpiocdev
 
 
 RUN go build

@@ -51,7 +51,7 @@ type Cam struct {
 func InitCam() (*Cam, error) {
 	c := &Cam{}
 	//c.Webcam, c.err = gocv.OpenVideoCapture(-1)
-	c.Webcam, c.err = gocv.VideoCaptureDevice(1)
+	c.Webcam, c.err = gocv.VideoCaptureDevice(0)
 	//c.Webcam, c.err = gocv.OpenVideoCaptureWithAPI(1, 200)
 	if c.err != nil {
 		log.Printf("Error opening webcam")
@@ -62,7 +62,7 @@ func InitCam() (*Cam, error) {
 	log.Printf("Camera is Initiated")
 	c.IsRunning = true
 
-	go c.Start()
+	//go c.Start()
 	// go c.FaceDetect()
 	return c, nil
 }
