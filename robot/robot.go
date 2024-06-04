@@ -1,11 +1,9 @@
 package robot
 
 import (
+	"fmt"
 	"log"
-	_ "time"
-
 	"github.com/warthog618/go-gpiocdev"
-	_ "gobot.io/x/gobot/v2"
 	"gobot.io/x/gobot/v2/platforms/raspi"
 )
 
@@ -31,13 +29,15 @@ type device interface {
 
 type Robot struct {
 	Name       string
-	State      bool
-	adaptor    *raspi.Adaptor
+	IsRunning  bool
+	State      bool // depreciated
+	adaptor    *raspi.Adaptor // I really want to depreciate this
 	runningled *gpiocdev.Line
-	//serverled  *gpiocdev.Line
-	//armled     *gpiocdev.Line
-	arm     *Arm
-	Devices map[string]interface{}
+	serverled  *gpiocdev.Line
+	armled     *gpiocdev.Line
+	arm        *Arm
+	camera     *Cam
+	Devices    map[string]interface{}
 }
 
 func InitRobot() (*Robot, error) {
@@ -49,13 +49,20 @@ func InitRobot() (*Robot, error) {
 		Devices: make(map[string]interface{}),
 	}
 
-	//robot.arm := InitArm(robot.adaptor)
+	/* Start our devices*/
+	r.IsRunning = true
 	err := robot.initDevices()
 	if err != nil {
-
+		// TODO: This error handler needs to be rethought.
+		// When initDevices() runs,
+		// we want it to tell us which devices have errors, not that initDevices()
+		// had errors
 		log.Printf("%v failed to intialize device: %v", robot.Name, err)
-		// return nil, err
+		r.IsRunning = false
 	}
+	
+	// Turn on our operating light
+	r.runningled.SetValue(1)
 
 	log.Println("Startup Complete")
 	return robot, nil
@@ -63,82 +70,99 @@ func InitRobot() (*Robot, error) {
 
 func (r *Robot) initDevices() error {
 
-	//r.runningled, runningLedErr = gpiocdev.RequestLine("gpiochip0", RUNNING_LED, gpiocdev.AsOutput(0))
-	r.runningled, _ = gpiocdev.RequestLine("gpiochip0", RUNNING_LED, gpiocdev.AsOutput(0))
+	// TODO: When initDevices() runs,
+	// we want it to return which devices have errors,
+	// So this method needs to either return a list of device errors
+	// an empty list should mean that all the devices are runnning and operational
 
-	// Setup Running Led ( Green LED on pin 37 )
+	/* Setup our running LED*/
+	runningled, runLedErr := robot.NewLedLine(RUNNING_LED, "Running LED")
+	if runLedErr != nil {
 
-	/*
-		r.runningled = gpio.NewLedDriver(r.adaptor, strconv.Itoa(RUNNING_LED))
-		r.runningled.Start()
-		runningLederr := r.runningled.On()
-		if runningLederr != nil {
-			log.Printf("Error Turning on Running LED: %v", runningLederr)
-			r.Devices["runningLedError"] = runningLederr
-		}*/
+		log.Printf("Warning !! Running LED Failec: %v", runLedErr)
+		r.Devices["runningLedError"] = runLedErr
+		// TODO: set device error list
+	}
+	r.Devices["runningLed"] = "Operational"
+	r.runningled = runningled
 
-	/*
-		//Setup Server LED ( Blue LED on pin ...)
-		r.serverled = gpio.NewLedDriver(r.adaptor, strconv.Itoa(SEVER_LED))
-		r.serverled.Start()
-		serverErr := r.serverled.On()
-		if serverErr != nil {
-			log.Printf("Error Turning on Server LED: %v", serverErr)
-			r.Devices["severledError"] = serverErr
-		}
-
-		//Setup Arm LED ( White LED on pin ...)
-		r.armled = gpio.NewLedDriver(r.adaptor, strconv.Itoa(ARM_LED))
-		r.armled.Start()
-		armErr := r.armled.On()
-		if armErr != nil {
-			log.Printf("Error Turning on arm LED: %v", armErr)
-			r.Devices["armLEDError"] = armErr
-		}
-	*/
-
-	// Setup Arm
+	/* Setup Arm */
 	arm, err := InitArm(r.adaptor)
 	if err != nil {
-		log.Printf("%v failed to initialize Arm: %v", r.Name, err)
+		errmsg = fmt.Sprintf("Warning!! Arm Initialization Failed!: %v", err)
+		log.Printf(errmsg)
 		// TODO Set the arm error in the device status
-		r.Devices["armError"] = err
-		//return err
+		r.Devices["armError"] = errmsg
 	}
 	r.arm = arm
+
+	if arm.IsRunning {
+
+		armled, armLedErr := robot.NewLedLine(ARM_LED, "Arm LED")
+		if armLedErr != nil {
+			errMsg = fmt.Sprintf("Warning!! Arm LED Failed: %v", armLedErr)
+			log.Printf(errMsg)
+			r.Devices["ArmLedError"] = armLedErr
+		}
+		r.Devices["ArmLed"] = "Operational"
+		r.armled = armled
+	}
+
+	/* Set up pur camera */
+	cam, camerr := InitCam()
+	if camerr != nil {
+		errMsg = fmt.Sprintf("Warning !! Camera Initialization Failed: %v", camerr)
+		log.Printf(errMsg)
+		r.Devices["CameraError"] = camerr
+	}
+
+	if cam.IsRunning {
+		r.Devices["Camera"] = "Operational"
+		r.camera = cam
+	}
+
+	// TODO: This should be an empty list
 	return nil
 }
 
 func (r *Robot) Start() (bool, error) {
-	log.Println("starting Bot")
-	r.State = true
+	
+	log.Println("Starting Arm and Camera...")
+	
+	if r.arm.IsRunning {
+		r.armled.SetValue(1)
+		err = r.arm.Start(); !ok {
+			errMsg = fmt.Sprintf("Error Failed to move arm to starting position :%v", err)
+			log.Printf(errMsg)
+			r.Devices["ArmError"] = errMsg
+		}
 
-	err := r.runningled.SetValue(1)
-	if err != nil {
-
-		//log.Printf("Error Turning on Led: %v", err)
-		r.State = false
-		log.Printf("Error Turning on Running LED: %v", err)
-		r.Devices["runningLedError"] = err
-		return r.State, err
 	}
 
-	r.arm.Start()
-	return r.State, nil
+	if r.camera.IsRunning {
+		// TODO: This should probably have an error handler
+		go r.camera.Start()
+	}
+
+	r.IsRunning = true
+	return r.IsRunning, nil
 }
 
 func (r *Robot) Stop() (bool, error) {
-	log.Println("stoping Bot")
-	r.State = false
+	log.Println("Stoping Arm and Camera")
+	r.IsRunning = false
 
-	err := r.runningled.SetValue(0)
-	if err != nil {
-		log.Printf("Error Turning Led Off: %v", err)
-		return false, err
+	if r.arm.IsRunning {
+		r.armled.SetValue(0)
+		err = r.arm.Stop(); !ok {
+			errMsg = fmt.Sprintf("Error Faild to return arm to default positon:%v", err)
+			log.Printf(errMsg)
+			r.Devices["ArmError"] = errMsg
+		}
 	}
+	
 
-	r.arm.Stop()
-	return r.State, nil
+	return r.IsRunning, nil
 }
 
 func (r *Robot) Reset() error { return nil }
