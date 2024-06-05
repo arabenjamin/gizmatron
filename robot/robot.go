@@ -2,9 +2,10 @@ package robot
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/warthog618/go-gpiocdev"
 	"gobot.io/x/gobot/v2/platforms/raspi"
-	"log"
 )
 
 const (
@@ -33,7 +34,7 @@ type Robot struct {
 	State      bool           // depreciated
 	adaptor    *raspi.Adaptor // I really want to depreciate this
 	runningled *gpiocdev.Line
-	serverled  *gpiocdev.Line
+	Serverled  *gpiocdev.Line
 	armled     *gpiocdev.Line
 	arm        *Arm
 	camera     *Cam
@@ -76,7 +77,7 @@ func (r *Robot) initDevices() error {
 	// an empty list should mean that all the devices are runnning and operational
 
 	/* Setup our running LED*/
-	runningled, runLedErr := r.NewLedLine(RUNNING_LED, "Running LED")
+	runningled, runLedErr := NewLedLine(RUNNING_LED, "Running LED")
 	if runLedErr != nil {
 
 		log.Printf("Warning !! Running LED Failec: %v", runLedErr)
@@ -98,7 +99,7 @@ func (r *Robot) initDevices() error {
 
 	if arm.IsRunning {
 
-		armled, armLedErr := r.NewLedLine(ARM_LED, "Arm LED")
+		armled, armLedErr := NewLedLine(ARM_LED, "Arm LED")
 		if armLedErr != nil {
 			errMsg := fmt.Sprintf("Warning!! Arm LED Failed: %v", armLedErr)
 			log.Printf(errMsg)
@@ -131,8 +132,8 @@ func (r *Robot) Start() (bool, error) {
 
 	if r.arm.IsRunning {
 		r.armled.SetValue(1)
-		if ok := r.arm.Start(); !ok {
-			errMg := fmt.Sprintf("Error Failed to move arm to starting position :%v", ok)
+		if ok := r.arm.Start(); ok != nil {
+			errMsg := fmt.Sprintf("Error Failed to move arm to starting position :%v", ok)
 			log.Printf(errMsg)
 			r.Devices["ArmError"] = errMsg
 		}
@@ -154,13 +155,13 @@ func (r *Robot) Stop() (bool, error) {
 
 	if r.arm.IsRunning {
 		r.armled.SetValue(0)
-		if ok := r.arm.Stop(); !ok {
+		if ok := r.arm.Stop(); ok != nil {
 			errMsg := fmt.Sprintf("Error Faild to return arm to default positon:%v", ok)
 			log.Printf(errMsg)
 			r.Devices["ArmError"] = errMsg
 		}
 	}
-	go r.camera.Close()
+	go r.camera.Webcam.Close()
 	return r.IsRunning, nil
 }
 
