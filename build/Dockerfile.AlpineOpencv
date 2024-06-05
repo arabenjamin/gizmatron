@@ -1,6 +1,7 @@
 FROM alpine:3.7
 
-ENV OPENCV_VERSION=4.5.1
+#ENV OPENCV_VERSION=4.5.1
+ENV OPENCV_VERSION=4.9.0
 ENV BUILD="ca-certificates \
 		 git \
 		 wget \
@@ -83,8 +84,9 @@ ENV PATH /go/bin:$PATH
 
 
 
-ENV GOLANG_FILE go1.15.3.linux-armv6l.tar.gz
+#ENV GOLANG_FILE go1.15.3.linux-armv6l.tar.gz
 #ENV GOLANG_FILE go1.15.3.linux-amd64.tar.gz
+ENV GOLANG_FILE go1.22.4.linux-arm64.tar.gz
 ENV GOLANG_URL "https://golang.org/dl/"
  
 RUN apk update && apk add --no-cache git wget gcc bash libc6-compat musl-dev openssl-dev ca-certificates && update-ca-certificates
@@ -102,13 +104,11 @@ WORKDIR $GOPATH/src/
 RUN go env -w GO111MODULE=auto
 
 RUN go version && go env
-RUN go get -u -d gocv.io/x/gocv
-RUN go get -u github.com/hybridgroup/mjpeg
-RUN go get -u github.com/stianeikeland/go-rpio
+RUN go install gocv.io/x/gocv
+#RUN go get -u github.com/hybridgroup/mjpeg
+#RUN go get -u github.com/stianeikeland/go-rpio
 #RUN go get github.com/warthog618/go-gpiocdev
 #COPY gocv/ $GOPATH/src/gocv/
-
-RUN ls 
 
 RUN cd gocv.io/x/gocv && \
 	go run ./cmd/version/main.go

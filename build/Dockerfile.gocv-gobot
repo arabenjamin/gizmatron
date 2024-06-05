@@ -1,4 +1,5 @@
-FROM gocv/opencv:latest
+#FROM gocv/opencv:latest
+FROM opencv/gocv:latest
 
 
 # Install and configure Go
@@ -21,6 +22,8 @@ ENV PATH /go/bin:$PATH
 COPY . $GOPATH/src/robot/
 WORKDIR $GOPATH/src/robot
 
+RUN go env -w GO111MODULE=auto
+
 RUN go version && go env
 
 #RUN modprobe bcm2835-v4l2
@@ -32,6 +35,7 @@ RUN go version && go env
 #RUN go install github.com/warthog618/go-gpiocdev
 
 
+#RUN go build -tags customenv
 RUN go build
 
 CMD ["./gizmatron"]

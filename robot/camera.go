@@ -2,12 +2,13 @@ package robot
 
 import (
 	"fmt"
-	"github.com/hybridgroup/mjpeg"
-	"gocv.io/x/gocv"
 	"image/color"
 	"log"
 	"os"
 	"sync"
+
+	"github.com/hybridgroup/mjpeg"
+	"gocv.io/x/gocv"
 )
 
 /* Takes picture saves as .jpeg*/
@@ -62,7 +63,7 @@ func InitCam() (*Cam, error) {
 	log.Printf("Camera is Initiated")
 	c.IsRunning = true
 
-	//go c.Start()
+	go c.Start()
 	// go c.FaceDetect()
 	return c, nil
 }
@@ -88,7 +89,7 @@ func (c *Cam) Start() {
 
 	for {
 		if ok := c.Webcam.Read(&c.ImgMat); !ok {
-			log.Printf("Cannot read from Device")
+			log.Printf("Warning !! Cannot read from Device: %v", ok)
 			//c.RestartCam()
 			return
 		}

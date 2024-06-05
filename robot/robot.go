@@ -142,7 +142,8 @@ func (r *Robot) Start() (bool, error) {
 
 	if r.camera.IsRunning {
 		// TODO: This should probably have an error handler
-		go r.camera.Start()
+		//go r.camera.Start()
+		log.Printf("Turning on Camera")
 	}
 
 	r.IsRunning = true
@@ -161,7 +162,7 @@ func (r *Robot) Stop() (bool, error) {
 			r.Devices["ArmError"] = errMsg
 		}
 	}
-	go r.camera.Webcam.Close()
+	//go r.camera.Webcam.Close()
 	return r.IsRunning, nil
 }
 
