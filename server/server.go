@@ -4,11 +4,12 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"github.com/arabenjamin/gizmatron/robot"
 	"io"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/arabenjamin/gizmatron/robot"
 )
 
 /*Middleware Go wants a comment */
@@ -94,11 +95,15 @@ func Start(bot *robot.Robot) error {
 	if serverErr != nil {
 		log.Printf("Error Turning on Server LED: %v", serverErr)
 		bot.Devices["severledError"] = serverErr
+	} else {
+		bot.Devices["serverLed"] = "Operational"
 	}
 	bot.Serverled = serverled
 	// Turn the server led on now
 	// I may want to rethink the way the server light comes on.
-	bot.Serverled.SetValue(1)
+	if bot.Devices["severLed"] == "Operational" {
+		bot.Serverled.SetValue(1)
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ping", ping)

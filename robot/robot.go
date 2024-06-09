@@ -62,8 +62,13 @@ func InitRobot() (*Robot, error) {
 		robot.IsRunning = false
 	}
 
-	// Turn on our operating light
-	robot.runningled.SetValue(1)
+	// NOTE: IF we dont make this check and try to change the value of a non-existent pin ...
+	// really narly shit happens.
+	// Rember to mind you P's and Q's
+	if robot.Devices["runningLedError"] == "Operational" {
+		// Turn on our operating light
+		robot.runningled.SetValue(1)
+	}
 
 	log.Println("Startup Complete")
 	return robot, nil
@@ -80,7 +85,7 @@ func (r *Robot) initDevices() error {
 	runningled, runLedErr := NewLedLine(RUNNING_LED, "Running LED")
 	if runLedErr != nil {
 
-		log.Printf("Warning !! Running LED Failec: %v", runLedErr)
+		log.Printf("Warning !! Running LED Failed: %v", runLedErr)
 		r.Devices["runningLedError"] = runLedErr
 		// TODO: set device error list
 	}
