@@ -147,7 +147,7 @@ func (r *Robot) Start() (bool, error) {
 
 	if r.camera.IsRunning {
 		// TODO: This should probably have an error handler
-		//go r.camera.Start()
+		go r.camera.Start()
 		log.Printf("Turning on Camera")
 	}
 

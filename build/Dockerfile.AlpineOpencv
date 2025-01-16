@@ -46,6 +46,7 @@ RUN mkdir /tmp/opencv && \
     -D CMAKE_INSTALL_PREFIX=/usr/local \
     -D OPENCV_EXTRA_MODULES_PATH=/tmp/opencv/opencv_contrib-${OPENCV_VERSION}/modules \
     -D WITH_FFMPEG=YES \
+    -D WITH_V4L=ON \
     -D INSTALL_C_EXAMPLES=NO \
     -D INSTALL_PYTHON_EXAMPLES=NO \
     -D BUILD_ANDROID_EXAMPLES=NO \

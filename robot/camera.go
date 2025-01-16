@@ -51,9 +51,10 @@ type Cam struct {
 
 func InitCam() (*Cam, error) {
 	c := &Cam{}
-	//c.Webcam, c.err = gocv.OpenVideoCapture(-1)
-	c.Webcam, c.err = gocv.VideoCaptureDevice(-1)
-	//c.Webcam, c.err = gocv.OpenVideoCaptureWithAPI(1, 200)
+  c.Webcam, c.err = gocv.OpenVideoCapture(0)  
+  //c.Webcam, c.err = gocv.OpenVideoCapture(-1)
+	//c.Webcam, c.err = gocv.VideoCaptureDevice(0)
+	//c.Webcam, c.err = gocv.OpenVideoCaptureWithAPI(0, 1900) //200 V4L 1800 Gstreamer 1900 FFmpeg
 	if c.err != nil {
 		log.Printf("Error opening webcam")
 		c.IsRunning = false
@@ -90,7 +91,7 @@ func (c *Cam) Start() {
 	for {
 		if ok := c.Webcam.Read(&c.ImgMat); !ok {
 			log.Printf("Warning !! Cannot read from Device: %v", ok)
-			//c.RestartCam()
+			//c.RestartCam()  
 			// TODO : return an error
 			return
 		}

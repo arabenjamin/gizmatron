@@ -86,10 +86,7 @@ func Chain(f http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 
 func Start(bot *robot.Robot) error {
 
-	//fmt.Println("Starting WebApp")
 
-	//thisLogger := log.New(os.Stdout, "http: ", log.LstdFlags)
-	//thisLogger.Println("Starting server...")
 	//Setup Server LED ( Blue LED on pin ...)
 	serverled, serverErr := robot.NewLedLine(13, "Sever Led")
 	if serverErr != nil {

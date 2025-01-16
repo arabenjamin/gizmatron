@@ -18,7 +18,7 @@ ENV PATH /go/bin:$PATH
 # Set GOPATH mode
 RUN go env -w GO111MODULE=auto
 RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
-#RUN sudo modprobe bcm2835-v4l2Z
+RUN sudo modprobe bcm2835-v4l2
 
 # Install Dependancyies 
 #RUN go get -u -d gocv.io/x/gocv
