@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/hybridgroup/mjpeg"
 	"gocv.io/x/gocv"
@@ -51,20 +52,31 @@ type Cam struct {
 
 func InitCam() (*Cam, error) {
 	c := &Cam{}
+<<<<<<< HEAD
   c.Webcam, c.err = gocv.OpenVideoCapture(0)  
   //c.Webcam, c.err = gocv.OpenVideoCapture(-1)
 	//c.Webcam, c.err = gocv.VideoCaptureDevice(0)
 	//c.Webcam, c.err = gocv.OpenVideoCaptureWithAPI(0, 1900) //200 V4L 1800 Gstreamer 1900 FFmpeg
+=======
+	c.Webcam, c.err = gocv.OpenVideoCapture(0)
+>>>>>>> attempt to get the camera to stream
 	if c.err != nil {
 		log.Printf("Error opening webcam")
 		c.IsRunning = false
 		return c, c.err
 	}
+
 	defer c.Webcam.Close()
+
+	// prepare image matrix
+	c.ImgMat = gocv.NewMat()
+	defer c.ImgMat.Close()
+
 	log.Printf("Camera is Initiated")
 	c.IsRunning = true
 
-	go c.Start()
+	//go c.Start()
+	//c.Start()
 	// go c.FaceDetect()
 	return c, nil
 }
@@ -82,27 +94,40 @@ func (c *Cam) Restart() {
 func (c *Cam) Start() {
 
 	// prepare image matrix
-	c.ImgMat = gocv.NewMat()
-	defer c.ImgMat.Close()
+	//c.ImgMat = gocv.NewMat()
+	//defer c.ImgMat.Close()
 
 	// create the mjpeg stream
 	c.Stream = mjpeg.NewStream()
 
 	for {
+
 		if ok := c.Webcam.Read(&c.ImgMat); !ok {
+<<<<<<< HEAD
 			log.Printf("Warning !! Cannot read from Device: %v", ok)
 			//c.RestartCam()  
+=======
+
+			log.Printf("Warning !! Cannot read from Camera Device: %v", ok)
+			//c.RestartCam()
+>>>>>>> attempt to get the camera to stream
 			// TODO : return an error
 			return
 		}
 
+		if c.ImgMat.Empty() {
+			log.Printf("Image Matrix is empty, moving forward ")
+			continue
+		}
+
 		if !c.ImgMat.Empty() {
-			//log.Printf("Image Matrix is empty, moving forward ")
+
 			//c.mux.Lock()
 			//c.FaceDetect()
 			buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+			//	buf, _ := gocv.IMEncode(".jpg", img)
 			c.Stream.UpdateJPEG(buf.GetBytes())
-			//c.mux.Unlock()
+			//	//c.mux.Unlock()
 		}
 	}
 }
@@ -143,6 +168,64 @@ func (c *Cam) FaceDetect() {
 			}
 			//c.mux.Unlock()
 		}
+	}
+
+}
+
+// RunCamera starts the camera
+func (c *Cam) RunCamera() {
+	//c.IsRunning = true
+
+	/*
+		webcam, err := gocv.OpenVideoCapture(0)
+		//webcam, err := gocv.VideoCaptureDevice(0, gocv.VideoCaptureV4L2)
+		if err != nil {
+			fmt.Printf("Error: Could not open the webcam: %v\n", err)
+			return
+		}
+		defer webcam.Close()
+
+
+	*/
+
+	// Create a Mat to hold the frame
+	img := gocv.NewMat()
+	defer img.Close()
+
+	// Create a window to display the video
+	window := gocv.NewWindow("Webcam Video")
+	defer window.Close()
+
+	// create the mjpeg stream
+	//c.Stream = mjpeg.NewStream()
+
+	// Loop to read the frames from the webcam
+	for {
+
+		if ok := c.Webcam.Read(&c.ImgMat); !ok {
+			fmt.Println("Error: Could not read a frame from the webcam")
+			return
+		}
+		if c.ImgMat.Empty() {
+			continue
+		}
+
+		// Display the frame in the window
+		if !c.ImgMat.Empty() {
+
+			window.IMShow(c.ImgMat)
+			//buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+			//	buf, _ := gocv.IMEncode(".jpg", img)
+			//c.Stream.UpdateJPEG(buf.GetBytes())
+		}
+
+		// Wait for 1 millisecond and check if 'q' is pressed
+		if window.WaitKey(1) == 'q' {
+			break
+		}
+		// Sleep for a short duration to control the frame rate
+		time.Sleep(33 * time.Millisecond) // ~30 FPS
+
 	}
 
 }

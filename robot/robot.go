@@ -37,7 +37,7 @@ type Robot struct {
 	Serverled  *gpiocdev.Line
 	armled     *gpiocdev.Line
 	arm        *Arm
-	camera     *Cam
+	Camera     *Cam
 	Devices    map[string]interface{}
 }
 
@@ -96,7 +96,7 @@ func (r *Robot) initDevices() error {
 	arm, err := InitArm(r.adaptor)
 	if err != nil {
 		errmsg := fmt.Sprintf("Warning!! Arm Initialization Failed!: %v", err)
-		log.Printf(errmsg)
+		log.Print(errmsg)
 		// TODO Set the arm error in the device status
 		r.Devices["armError"] = errmsg
 	}
@@ -107,7 +107,7 @@ func (r *Robot) initDevices() error {
 		armled, armLedErr := NewLedLine(ARM_LED, "Arm LED")
 		if armLedErr != nil {
 			errMsg := fmt.Sprintf("Warning!! Arm LED Failed: %v", armLedErr)
-			log.Printf(errMsg)
+			log.Print(errMsg)
 			r.Devices["ArmLedError"] = armLedErr
 		}
 		r.Devices["ArmLed"] = "Operational"
@@ -118,13 +118,13 @@ func (r *Robot) initDevices() error {
 	cam, camerr := InitCam()
 	if camerr != nil {
 		errMsg := fmt.Sprintf("Warning !! Camera Initialization Failed: %v", camerr)
-		log.Printf(errMsg)
+		log.Print(errMsg)
 		r.Devices["CameraError"] = camerr
 	}
 
 	if cam.IsRunning {
 		r.Devices["Camera"] = "Operational"
-		r.camera = cam
+		r.Camera.RunCamera()
 	}
 
 	// TODO: This should be an empty list
@@ -139,13 +139,13 @@ func (r *Robot) Start() (bool, error) {
 		r.armled.SetValue(1)
 		if ok := r.arm.Start(); ok != nil {
 			errMsg := fmt.Sprintf("Error Failed to move arm to starting position :%v", ok)
-			log.Printf(errMsg)
+			log.Print(errMsg)
 			r.Devices["ArmError"] = errMsg
 		}
 
 	}
 
-	if r.camera.IsRunning {
+	if r.Camera.IsRunning {
 		// TODO: This should probably have an error handler
 		go r.camera.Start()
 		log.Printf("Turning on Camera")
@@ -163,7 +163,7 @@ func (r *Robot) Stop() (bool, error) {
 		r.armled.SetValue(0)
 		if ok := r.arm.Stop(); ok != nil {
 			errMsg := fmt.Sprintf("Error Faild to return arm to default positon:%v", ok)
-			log.Printf(errMsg)
+			log.Print(errMsg)
 			r.Devices["ArmError"] = errMsg
 		}
 	}

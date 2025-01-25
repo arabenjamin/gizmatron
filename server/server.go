@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/arabenjamin/gizmatron/robot"
+	"gocv.io/x/gocv"
 )
 
 /*Middleware Go wants a comment */
@@ -184,6 +185,76 @@ func Start(bot *robot.Robot) error {
 
 		logReq(req)
 		respond(resp, thisResponse)
+
+	})
+
+	mux.HandleFunc("/video", func(resp http.ResponseWriter, req *http.Request) {
+
+		//bot.Serverled.SetValue(1)
+		//
+		//bot.Serverled.SetValue(0)
+
+		status := fmt.Sprintf("%v, is running", bot.Name)
+		if !bot.IsRunning {
+			status = fmt.Sprintf("%v, is not running", bot.Name)
+
+			thisRequest := map[string]interface{}{
+				"time":           time.Now().Unix(),
+				"client_address": req.RemoteAddr,
+				"resource":       req.URL.Path,
+				"user_agent":     req.Header["User-Agent"],
+				"client":         clientHash(req),
+			}
+
+			thisResponse := map[string]interface{}{
+				"status":        status,
+				"device_status": bot.Devices,
+				"botname":       bot.Name,
+				"this_request":  thisRequest,
+			}
+
+			logReq(req)
+			respond(resp, thisResponse)
+		}
+
+		if !bot.Camera.IsRunning {
+			log.Printf("The camera is not running")
+			status = "The camera is not running"
+			thisRequest := map[string]interface{}{
+				"time":           time.Now().Unix(),
+				"client_address": req.RemoteAddr,
+				"resource":       req.URL.Path,
+				"user_agent":     req.Header["User-Agent"],
+				"client":         clientHash(req),
+			}
+
+			thisResponse := map[string]interface{}{
+				"status":        status,
+				"device_status": bot.Devices,
+				"botname":       bot.Name,
+				"this_request":  thisRequest,
+			}
+
+			logReq(req)
+			respond(resp, thisResponse)
+
+		}
+
+		//resp.Write([]byte("Video Stream"))
+		//go bot.Camera.Stream.ServeHTTP(resp, req)
+		//bot.Camera.RunCamera()
+
+		if !bot.Camera.ImgMat.Empty() {
+			buf, _ := gocv.IMEncode(".jpg", bot.Camera.ImgMat)
+			jpegBytes := buf.GetBytes()
+
+			// Write the frame to the HTTP response
+			fmt.Fprintf(resp, "--frame\r\n")
+			fmt.Fprintf(resp, "Content-Type: image/jpeg\r\n")
+			fmt.Fprintf(resp, "Content-Length: %d\r\n\r\n", len(jpegBytes))
+			resp.Write(jpegBytes)
+			fmt.Fprintf(resp, "\r\n")
+		}
 
 	})
 
