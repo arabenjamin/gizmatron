@@ -46,20 +46,14 @@ type Cam struct {
 	Webcam    *gocv.VideoCapture
 	ImgMat    gocv.Mat
 	Stream    *mjpeg.Stream
+	Buf       []byte
 	//Img *image.Image
 	mux sync.Mutex
 }
 
 func InitCam() (*Cam, error) {
 	c := &Cam{}
-<<<<<<< HEAD
-  c.Webcam, c.err = gocv.OpenVideoCapture(0)  
-  //c.Webcam, c.err = gocv.OpenVideoCapture(-1)
-	//c.Webcam, c.err = gocv.VideoCaptureDevice(0)
-	//c.Webcam, c.err = gocv.OpenVideoCaptureWithAPI(0, 1900) //200 V4L 1800 Gstreamer 1900 FFmpeg
-=======
 	c.Webcam, c.err = gocv.OpenVideoCapture(0)
->>>>>>> attempt to get the camera to stream
 	if c.err != nil {
 		log.Printf("Error opening webcam")
 		c.IsRunning = false
@@ -67,10 +61,6 @@ func InitCam() (*Cam, error) {
 	}
 
 	defer c.Webcam.Close()
-
-	// prepare image matrix
-	c.ImgMat = gocv.NewMat()
-	defer c.ImgMat.Close()
 
 	log.Printf("Camera is Initiated")
 	c.IsRunning = true
@@ -103,14 +93,9 @@ func (c *Cam) Start() {
 	for {
 
 		if ok := c.Webcam.Read(&c.ImgMat); !ok {
-<<<<<<< HEAD
-			log.Printf("Warning !! Cannot read from Device: %v", ok)
-			//c.RestartCam()  
-=======
 
 			log.Printf("Warning !! Cannot read from Camera Device: %v", ok)
 			//c.RestartCam()
->>>>>>> attempt to get the camera to stream
 			// TODO : return an error
 			return
 		}
@@ -174,7 +159,17 @@ func (c *Cam) FaceDetect() {
 
 // RunCamera starts the camera
 func (c *Cam) RunCamera() {
-	//c.IsRunning = true
+	c.IsRunning = true
+
+	if c.Webcam == nil {
+		var err error
+		c.Webcam, err = gocv.OpenVideoCapture(0)
+		if err != nil {
+			fmt.Println("Error: Could not open webcam")
+			return
+		}
+	}
+	defer c.Webcam.Close()
 
 	/*
 		webcam, err := gocv.OpenVideoCapture(0)
@@ -189,8 +184,8 @@ func (c *Cam) RunCamera() {
 	*/
 
 	// Create a Mat to hold the frame
-	img := gocv.NewMat()
-	defer img.Close()
+	//img := gocv.NewMat()
+	//defer img.Close()
 
 	// Create a window to display the video
 	window := gocv.NewWindow("Webcam Video")
@@ -198,6 +193,10 @@ func (c *Cam) RunCamera() {
 
 	// create the mjpeg stream
 	//c.Stream = mjpeg.NewStream()
+
+	// prepare image matrix
+	c.ImgMat = gocv.NewMat()
+	defer c.ImgMat.Close()
 
 	// Loop to read the frames from the webcam
 	for {
@@ -210,14 +209,22 @@ func (c *Cam) RunCamera() {
 			continue
 		}
 
-		// Display the frame in the window
-		if !c.ImgMat.Empty() {
+		window.IMShow(c.ImgMat)
+		buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+		c.Buf = buf.GetBytes()
 
-			window.IMShow(c.ImgMat)
-			//buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
-			//	buf, _ := gocv.IMEncode(".jpg", img)
-			//c.Stream.UpdateJPEG(buf.GetBytes())
-		}
+		// Display the frame in the window
+		/*
+			if !c.ImgMat.Empty() {
+
+				window.IMShow(c.ImgMat)
+				buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+				c.Buf = buf.GetBytes()
+
+				//	buf, _ := gocv.IMEncode(".jpg", img)
+				//c.Stream.UpdateJPEG(buf.GetBytes())
+			}
+		*/
 
 		// Wait for 1 millisecond and check if 'q' is pressed
 		if window.WaitKey(1) == 'q' {

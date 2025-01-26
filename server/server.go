@@ -87,7 +87,6 @@ func Chain(f http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 
 func Start(bot *robot.Robot) error {
 
-
 	//Setup Server LED ( Blue LED on pin ...)
 	serverled, serverErr := robot.NewLedLine(13, "Sever Led")
 	if serverErr != nil {
@@ -189,10 +188,14 @@ func Start(bot *robot.Robot) error {
 	})
 
 	mux.HandleFunc("/video", func(resp http.ResponseWriter, req *http.Request) {
-
+		resp.Header().Set("Content-Type", "multipart/x-mixed-replace; boundary=frame")
 		//bot.Serverled.SetValue(1)
 		//
 		//bot.Serverled.SetValue(0)
+
+		/* Log camera state */
+		camera_status := fmt.Sprintf("Current Camera State: %v", bot.Camera.IsRunning)
+		log.Print(camera_status)
 
 		status := fmt.Sprintf("%v, is running", bot.Name)
 		if !bot.IsRunning {
@@ -237,7 +240,6 @@ func Start(bot *robot.Robot) error {
 
 			logReq(req)
 			respond(resp, thisResponse)
-
 		}
 
 		//resp.Write([]byte("Video Stream"))
@@ -245,15 +247,18 @@ func Start(bot *robot.Robot) error {
 		//bot.Camera.RunCamera()
 
 		if !bot.Camera.ImgMat.Empty() {
-			buf, _ := gocv.IMEncode(".jpg", bot.Camera.ImgMat)
-			jpegBytes := buf.GetBytes()
+			for {
+				buf, _ := gocv.IMEncode(".jpg", bot.Camera.ImgMat)
+				jpegBytes := buf.GetBytes()
 
-			// Write the frame to the HTTP response
-			fmt.Fprintf(resp, "--frame\r\n")
-			fmt.Fprintf(resp, "Content-Type: image/jpeg\r\n")
-			fmt.Fprintf(resp, "Content-Length: %d\r\n\r\n", len(jpegBytes))
-			resp.Write(jpegBytes)
-			fmt.Fprintf(resp, "\r\n")
+				// Write the frame to the HTTP response
+				fmt.Fprintf(resp, "--frame\r\n")
+				fmt.Fprintf(resp, "Content-Type: image/jpeg\r\n")
+				fmt.Fprintf(resp, "Content-Length: %d\r\n\r\n", len(jpegBytes))
+				resp.Write(jpegBytes)
+				fmt.Fprintf(resp, "\r\n")
+			}
+
 		}
 
 	})
