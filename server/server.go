@@ -121,7 +121,13 @@ func Start(bot *robot.Robot) error {
 		}
 
 		thisResponse := map[string]interface{}{
-			"status":        status,
+			"status": status,
+			"camera_state": map[string]interface{}{
+				"operational": bot.Camera.IsOperational,
+				"running":     bot.Camera.IsRunning,
+				"empty":       bot.Camera.ImgMat.Empty(),
+				"Detected":    bot.Camera.DetectFaces,
+			},
 			"device_status": bot.Devices,
 			"botname":       bot.Name,
 			"this_request":  thisRequest,
@@ -187,17 +193,65 @@ func Start(bot *robot.Robot) error {
 
 	})
 
-	mux.HandleFunc("/video", func(resp http.ResponseWriter, req *http.Request) {
-		resp.Header().Set("Content-Type", "multipart/x-mixed-replace; boundary=frame")
-		//bot.Serverled.SetValue(1)
-		//
-		//bot.Serverled.SetValue(0)
+	mux.HandleFunc("/api/v1/detectfaces", func(resp http.ResponseWriter, req *http.Request) {
 
-		/* Log camera state */
-		camera_status := fmt.Sprintf("Current Camera State: %v", bot.Camera.IsRunning)
-		log.Print(camera_status)
+		if req.Method != http.MethodPost {
+			http.Error(resp, "Invalid request method", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var requestData struct {
+			Enable bool `json:"enable"`
+		}
+
+		if err := json.NewDecoder(req.Body).Decode(&requestData); err != nil {
+			http.Error(resp, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		bot.Camera.DetectFaces = requestData.Enable
+
+		status := "Face detection disabled"
+		if requestData.Enable {
+			status = "Face detection enabled"
+		}
+
+		thisRequest := map[string]interface{}{
+			"time":           time.Now().Unix(),
+			"client_address": req.RemoteAddr,
+			"resource":       req.URL.Path,
+			"user_agent":     req.Header["User-Agent"],
+			"client":         clientHash(req),
+		}
+
+		thisResponse := map[string]interface{}{
+			"status":        status,
+			"device_status": bot.Devices,
+			"camera_state": map[string]interface{}{
+				"operational": bot.Camera.IsOperational,
+				"running":     bot.Camera.IsRunning,
+				"empty":       bot.Camera.ImgMat.Empty(),
+				"Detected":    bot.Camera.DetectFaces,
+			},
+			"botname":      bot.Name,
+			"this_request": thisRequest,
+		}
+
+		logReq(req)
+		respond(resp, thisResponse)
+	})
+
+	mux.HandleFunc("/video", func(resp http.ResponseWriter, req *http.Request) {
+
+		// TODO: The below is really bad, and needs to be refactored
+
+		resp.Header().Set("Content-Type", "multipart/x-mixed-replace; boundary=frame")
+
+		// TODO: Build camera running light on pysical Robot
+		/* Turn on video light*/
 
 		status := fmt.Sprintf("%v, is running", bot.Name)
+		// TODO: refactor .IsRunning to .IsOperational
 		if !bot.IsRunning {
 			status = fmt.Sprintf("%v, is not running", bot.Name)
 
@@ -218,6 +272,7 @@ func Start(bot *robot.Robot) error {
 
 			logReq(req)
 			respond(resp, thisResponse)
+			return
 		}
 
 		if !bot.Camera.IsRunning {
@@ -232,7 +287,13 @@ func Start(bot *robot.Robot) error {
 			}
 
 			thisResponse := map[string]interface{}{
-				"status":        status,
+				"status": status,
+				"camera_state": map[string]interface{}{
+					"operational": bot.Camera.IsOperational,
+					"running":     bot.Camera.IsRunning,
+					"empty":       bot.Camera.ImgMat.Empty(),
+					"Detected":    bot.Camera.DetectFaces,
+				},
 				"device_status": bot.Devices,
 				"botname":       bot.Name,
 				"this_request":  thisRequest,
@@ -240,14 +301,18 @@ func Start(bot *robot.Robot) error {
 
 			logReq(req)
 			respond(resp, thisResponse)
+			return
 		}
 
-		//resp.Write([]byte("Video Stream"))
+		/* Log camera state */
+		if bot.Camera.IsOperational && bot.Camera.IsRunning && !bot.Camera.ImgMat.Empty() {
+			log.Print("Camera is operational, running and the buffer is not empty, serving video")
+		}
 		//go bot.Camera.Stream.ServeHTTP(resp, req)
-		//bot.Camera.RunCamera()
-
 		if !bot.Camera.ImgMat.Empty() {
+
 			for {
+
 				buf, _ := gocv.IMEncode(".jpg", bot.Camera.ImgMat)
 				jpegBytes := buf.GetBytes()
 
