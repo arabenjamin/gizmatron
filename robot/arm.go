@@ -41,16 +41,16 @@ import (
 */
 
 type Arm struct {
-	err     error
-	State	bool
+	err       error
+	State     bool
 	IsRunning bool
-	adaptor *raspi.Adaptor
-	name    string
-	driver  *i2c.PCA9685Driver
-	pins    []int
-	joints  []*Servo
-	x_max   int
-	y_max   int
+	adaptor   *raspi.Adaptor
+	name      string
+	driver    *i2c.PCA9685Driver
+	pins      []int
+	joints    []*Servo
+	x_max     int
+	y_max     int
 }
 
 func InitArm(adaptor *raspi.Adaptor) (*Arm, error) {
@@ -175,7 +175,7 @@ func (a *Arm) Stop() error {
 		log.Printf("Moving Joint: %v", v)
 		err := a.Update(i, 2000)
 		if err != nil {
-			log.Println("failed to stop arm: %v", err)
+			log.Printf("failed to stop arm: %v", err)
 			return err
 		}
 	}

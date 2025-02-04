@@ -1,0 +1,121 @@
+openapi: 3.0.0
+info:
+  title: Gizmatron API
+  description: API for controlling the Gizmatron robot
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+paths:
+  /ping:
+    get:
+      summary: Ping the server
+      responses:
+        '200':
+          description: Server is alive
+  /bot-status:
+    get:
+      summary: Get the status of the bot
+      responses:
+        '200':
+          description: Bot status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  camera_state:
+                    type: object
+                    properties:
+                      operational:
+                        type: boolean
+                      running:
+                        type: boolean
+                      empty:
+                        type: boolean
+                      Detected:
+                        type: boolean
+                  device_status:
+                    type: object
+                  botname:
+                    type: string
+                  this_request:
+                    type: object
+  /bot-start:
+    post:
+      summary: Start the bot
+      responses:
+        '200':
+          description: Bot started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  device_status:
+                    type: object
+                  botname:
+                    type: string
+                  this_request:
+                    type: object
+  /bot-stop:
+    post:
+      summary: Stop the bot
+      responses:
+        '200':
+          description: Bot stopped
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  device_status:
+                    type: object
+                  botname:
+                    type: string
+                  this_request:
+                    type: object
+  /api/v1/detectfaces:
+    post:
+      summary: Enable or disable face detection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enable:
+                  type: boolean
+      responses:
+        '200':
+          description: Face detection status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  device_status:
+                    type: object
+                  botname:
+                    type: string
+                  this_request:
+                    type: object
+  /video:
+    get:
+      summary: Stream video from the camera
+      responses:
+        '200':
+          description: MJPEG stream
+          content:
+            multipart/x-mixed-replace:
+              schema:
+                type: string
+                format: binary

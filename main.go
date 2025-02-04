@@ -36,7 +36,7 @@ func main() {
 
 	/* Strart the server */
 	thisLogger.Println("Starting Gizmatron api server...")
-	err := server.Start(bot)
+	err := server.Start(bot, thisLogger)
 	if err != nil {
 		/*
 			Ideally the server should always be available
