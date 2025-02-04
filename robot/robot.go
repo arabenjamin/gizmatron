@@ -48,6 +48,7 @@ func InitRobot() (*Robot, error) {
 		Name:    "Gizmatron",
 		adaptor: raspi.NewAdaptor(),
 		Devices: make(map[string]interface{}),
+		Camera:  &Cam{},
 	}
 
 	/* Start our devices*/
@@ -122,9 +123,12 @@ func (r *Robot) initDevices() error {
 		r.Devices["CameraError"] = camerr
 	}
 
-	if cam.IsRunning {
+	if cam.IsOperational {
 		r.Devices["Camera"] = "Operational"
-		r.Camera.RunCamera()
+		log.Printf("Camera is operational")
+		//go r.Camera.RunCamera()
+		go r.Camera.Start()
+
 	}
 
 	// TODO: This should be an empty list
@@ -142,12 +146,13 @@ func (r *Robot) Start() (bool, error) {
 			log.Print(errMsg)
 			r.Devices["ArmError"] = errMsg
 		}
-
 	}
 
-	if r.Camera.IsRunning {
+	if r.Camera.IsOperational {
 		// TODO: This should probably have an error handler
-		go r.camera.Start()
+		r.Camera.DetectFaces = true
+		log.Printf("Detecting Faces")
+		go r.Camera.Start()
 		log.Printf("Turning on Camera")
 	}
 

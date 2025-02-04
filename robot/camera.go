@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image/color"
 	"log"
-	"os"
 	"sync"
 	"time"
 
@@ -41,43 +40,33 @@ func TakePicture() {
 */
 
 type Cam struct {
-	IsRunning bool
-	err       error
-	Webcam    *gocv.VideoCapture
-	ImgMat    gocv.Mat
-	Stream    *mjpeg.Stream
+	IsOperational bool
+	IsRunning     bool
+	DetectFaces   bool
+	err           error
+	Webcam        *gocv.VideoCapture
+	ImgMat        gocv.Mat
+	Stream        *mjpeg.Stream
+	Buf           []byte
 	//Img *image.Image
 	mux sync.Mutex
 }
 
 func InitCam() (*Cam, error) {
-	c := &Cam{}
-<<<<<<< HEAD
-  c.Webcam, c.err = gocv.OpenVideoCapture(0)  
-  //c.Webcam, c.err = gocv.OpenVideoCapture(-1)
-	//c.Webcam, c.err = gocv.VideoCaptureDevice(0)
-	//c.Webcam, c.err = gocv.OpenVideoCaptureWithAPI(0, 1900) //200 V4L 1800 Gstreamer 1900 FFmpeg
-=======
-	c.Webcam, c.err = gocv.OpenVideoCapture(0)
->>>>>>> attempt to get the camera to stream
-	if c.err != nil {
-		log.Printf("Error opening webcam")
-		c.IsRunning = false
-		return c, c.err
+	c := &Cam{
+		DetectFaces:   true,
+		IsOperational: true,
 	}
 
+	c.Webcam, c.err = gocv.OpenVideoCapture(0)
+	if c.err != nil {
+		log.Printf("Error opening webcam")
+		c.IsOperational = false
+		return c, c.err
+	}
 	defer c.Webcam.Close()
 
-	// prepare image matrix
-	c.ImgMat = gocv.NewMat()
-	defer c.ImgMat.Close()
-
 	log.Printf("Camera is Initiated")
-	c.IsRunning = true
-
-	//go c.Start()
-	//c.Start()
-	// go c.FaceDetect()
 	return c, nil
 }
 
@@ -91,48 +80,70 @@ func (c *Cam) Restart() {
 	c.Start()
 }
 
+/* Start reading from the camera to the Buffer */
 func (c *Cam) Start() {
 
-	// prepare image matrix
-	//c.ImgMat = gocv.NewMat()
-	//defer c.ImgMat.Close()
+	log.Printf("Starting Camera stream ...")
 
-	// create the mjpeg stream
-	c.Stream = mjpeg.NewStream()
-
-	for {
-
-		if ok := c.Webcam.Read(&c.ImgMat); !ok {
-<<<<<<< HEAD
-			log.Printf("Warning !! Cannot read from Device: %v", ok)
-			//c.RestartCam()  
-=======
-
-			log.Printf("Warning !! Cannot read from Camera Device: %v", ok)
-			//c.RestartCam()
->>>>>>> attempt to get the camera to stream
-			// TODO : return an error
+	if c.Webcam == nil {
+		var err error
+		c.Webcam, err = gocv.OpenVideoCapture(0)
+		if err != nil {
+			fmt.Println("Error: Could not open webcam")
 			return
 		}
+		c.IsOperational = true
+	}
+	defer c.Webcam.Close()
 
-		if c.ImgMat.Empty() {
-			log.Printf("Image Matrix is empty, moving forward ")
-			continue
-		}
+	if c.IsOperational {
 
-		if !c.ImgMat.Empty() {
+		c.DetectFaces = true
 
-			//c.mux.Lock()
-			//c.FaceDetect()
-			buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
-			//	buf, _ := gocv.IMEncode(".jpg", img)
-			c.Stream.UpdateJPEG(buf.GetBytes())
-			//	//c.mux.Unlock()
+		// prepare image matrix
+		c.ImgMat = gocv.NewMat()
+		defer c.ImgMat.Close()
+
+		// create the mjpeg stream
+		c.Stream = mjpeg.NewStream()
+
+		for {
+
+			if ok := c.Webcam.Read(&c.ImgMat); !ok {
+
+				log.Printf("Warning !! Cannot read from Camera Device: %v", ok)
+				//c.RestartCam()
+				// TODO : return an error
+				return
+			}
+
+			if c.ImgMat.Empty() {
+				log.Printf("Image Matrix is empty, moving forward ")
+				continue
+			}
+
+			if !c.ImgMat.Empty() {
+				c.IsRunning = true
+				//c.mux.Lock()
+				if c.DetectFaces {
+					c.FaceDetect()
+				}
+				buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+				c.Buf = buf.GetBytes()
+				c.Stream.UpdateJPEG(buf.GetBytes())
+				//	//c.mux.Unlock()
+
+				// Sleep for a short duration to control the frame rate
+				time.Sleep(33 * time.Millisecond) // ~30 FPS
+			}
 		}
 	}
+
 }
 
 func (c *Cam) FaceDetect() {
+
+	//log.Printf("Detecting Faces")
 
 	// color for the rect when faces detected
 	blue := color.RGBA{0, 0, 255, 0}
@@ -141,67 +152,63 @@ func (c *Cam) FaceDetect() {
 	classifier := gocv.NewCascadeClassifier()
 	defer classifier.Close()
 
-	/* */
-	var base_path string = os.Getenv("GOPATH") + "/src/"
-	var project_path string = base_path + "gocv.io/x/gocv/data/"
-	var xmlFile string = project_path + "haarcascade_frontalface_default.xml"
+	/*
+		var base_path string = os.Getenv("GOPATH") + "/src/"
+		var project_path string = base_path + "gocv.io/x/gocv/data/"
+		var xmlFile string = project_path + "haarcascade_frontalface_default.xml"
 
-	if !classifier.Load(xmlFile) {
-		fmt.Printf("Error reading cascade file: %v\n", xmlFile)
+		if !classifier.Load(xmlFile) {
+			fmt.Printf("Error reading cascade file: %v\n", xmlFile)
+			return
+		}*/
+
+	if !classifier.Load("/home/ara/opt/opencv/data/haarcascades/haarcascade_frontalface_default.xml") {
+		fmt.Println("Error: Could not load Haar Cascade classifier")
 		return
 	}
 
-	for {
-		if !c.ImgMat.Empty() {
-			// detect faces
-			//c.mux.Lock()
-			rects := classifier.DetectMultiScale(c.ImgMat)
-			fmt.Printf("found %d faces\n", len(rects))
-			// draw a rectangle around each face on the original image,
-			// along with text identifing as "Human"
-			for _, r := range rects {
-				gocv.Rectangle(&c.ImgMat, r, blue, 3)
+	if !c.ImgMat.Empty() {
 
-				//size := gocv.GetTextSize("Human", gocv.FontHersheyPlain, 1.2, 2)
-				//pt := image.Pt(r.Min.X+(r.Min.X/2)-(size.X/2), r.Min.Y-2)
-				//gocv.PutText(&c.ImgMat, "Human", pt, gocv.FontHersheyPlain, 1.2, blue, 2)
-			}
-			//c.mux.Unlock()
+		//c.mux.Lock()
+
+		// detect faces
+		rects := classifier.DetectMultiScale(c.ImgMat)
+		//fmt.Printf("found %d faces\n", len(rects))
+
+		// draw a rectangle around each face on the original image,
+		for _, r := range rects {
+			gocv.Rectangle(&c.ImgMat, r, blue, 3)
+			// TODO: add text identifing as "Human face"
 		}
+
 	}
 
 }
 
-// RunCamera starts the camera
+/* NOTE: This is for testing and debugging/troubleshooting */
 func (c *Cam) RunCamera() {
-	//c.IsRunning = true
 
-	/*
-		webcam, err := gocv.OpenVideoCapture(0)
-		//webcam, err := gocv.VideoCaptureDevice(0, gocv.VideoCaptureV4L2)
+	if c.Webcam == nil {
+		var err error
+		c.Webcam, err = gocv.OpenVideoCapture(0)
 		if err != nil {
-			fmt.Printf("Error: Could not open the webcam: %v\n", err)
+			fmt.Println("Error: Could not open webcam")
 			return
 		}
-		defer webcam.Close()
-
-
-	*/
-
-	// Create a Mat to hold the frame
-	img := gocv.NewMat()
-	defer img.Close()
-
-	// Create a window to display the video
-	window := gocv.NewWindow("Webcam Video")
-	defer window.Close()
+	}
+	defer c.Webcam.Close()
 
 	// create the mjpeg stream
-	//c.Stream = mjpeg.NewStream()
+	c.Stream = mjpeg.NewStream()
+
+	// prepare image matrix
+	c.ImgMat = gocv.NewMat()
+	defer c.ImgMat.Close()
 
 	// Loop to read the frames from the webcam
 	for {
 
+		c.IsRunning = true
 		if ok := c.Webcam.Read(&c.ImgMat); !ok {
 			fmt.Println("Error: Could not read a frame from the webcam")
 			return
@@ -210,22 +217,36 @@ func (c *Cam) RunCamera() {
 			continue
 		}
 
-		// Display the frame in the window
-		if !c.ImgMat.Empty() {
+		buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+		c.Buf = buf.GetBytes()
+		c.Stream.UpdateJPEG(buf.GetBytes())
 
-			window.IMShow(c.ImgMat)
-			//buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
-			//	buf, _ := gocv.IMEncode(".jpg", img)
-			//c.Stream.UpdateJPEG(buf.GetBytes())
-		}
-
-		// Wait for 1 millisecond and check if 'q' is pressed
-		if window.WaitKey(1) == 'q' {
-			break
-		}
 		// Sleep for a short duration to control the frame rate
 		time.Sleep(33 * time.Millisecond) // ~30 FPS
 
+	}
+
+}
+
+/* NOTE: this should only be run for testing and debugging/troubleshooting purposes */
+func (c *Cam) RunCamInWindow() {
+
+	/* Create a window to display the video */
+
+	window := gocv.NewWindow("Webcam Video")
+	defer window.Close()
+	if c.IsOperational && c.IsRunning {
+		for {
+
+			if c.ImgMat.Empty() {
+				continue
+			}
+
+			if !c.ImgMat.Empty() {
+				window.IMShow(c.ImgMat)
+			}
+
+		}
 	}
 
 }
