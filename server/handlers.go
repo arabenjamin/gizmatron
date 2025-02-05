@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/arabenjamin/gizmatron/robot"
+	"gocv.io/x/gocv"
 )
 
 func error_handler(resp http.ResponseWriter, req *http.Request) {}
@@ -128,6 +129,28 @@ func get_video(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
 		//logReq(req)
 		respond(resp, thisResponse)
 		return
+	}
+
+	/* Log camera state */
+	if bot.Camera.IsOperational && bot.Camera.IsRunning && !bot.Camera.ImgMat.Empty() {
+		log.Print("Camera is operational, running and the buffer is not empty, serving video")
+	}
+	//go bot.Camera.Stream.ServeHTTP(resp, req)
+	if !bot.Camera.ImgMat.Empty() {
+
+		for {
+
+			buf, _ := gocv.IMEncode(".jpg", bot.Camera.ImgMat)
+			jpegBytes := buf.GetBytes()
+
+			// Write the frame to the HTTP response
+			fmt.Fprintf(resp, "--frame\r\n")
+			fmt.Fprintf(resp, "Content-Type: image/jpeg\r\n")
+			fmt.Fprintf(resp, "Content-Length: %d\r\n\r\n", len(jpegBytes))
+			resp.Write(jpegBytes)
+			fmt.Fprintf(resp, "\r\n")
+		}
+
 	}
 }
 
