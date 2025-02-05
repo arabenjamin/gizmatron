@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/arabenjamin/gizmatron/robot"
+	"gocv.io/x/gocv"
 )
 
 func error_handler(resp http.ResponseWriter, req *http.Request) {}
@@ -36,7 +37,7 @@ func ping(resp http.ResponseWriter, req *http.Request) {
 	return
 }
 
-func get_status(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
+func get_status(resp http.ResponseWriter, req *http.Request, bot *robot.Robot) {
 	status := fmt.Sprintf("%v, is running", bot.Name)
 	if !bot.IsRunning {
 		status = fmt.Sprintf("%v, is not running", bot.Name)
@@ -67,7 +68,7 @@ func get_status(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
 	respond(resp, thisResponse)
 }
 
-func get_video(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
+func get_video(resp http.ResponseWriter, req *http.Request, bot *robot.Robot) {
 
 	// TODO: The below is really bad, and needs to be refactored
 
@@ -129,9 +130,31 @@ func get_video(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
 		respond(resp, thisResponse)
 		return
 	}
+
+	/* Log camera state */
+	if bot.Camera.IsOperational && bot.Camera.IsRunning && !bot.Camera.ImgMat.Empty() {
+		log.Print("Camera is operational, running and the buffer is not empty, serving video")
+	}
+	//go bot.Camera.Stream.ServeHTTP(resp, req)
+	if !bot.Camera.ImgMat.Empty() {
+
+		for {
+
+			buf, _ := gocv.IMEncode(".jpg", bot.Camera.ImgMat)
+			jpegBytes := buf.GetBytes()
+
+			// Write the frame to the HTTP response
+			fmt.Fprintf(resp, "--frame\r\n")
+			fmt.Fprintf(resp, "Content-Type: image/jpeg\r\n")
+			fmt.Fprintf(resp, "Content-Length: %d\r\n\r\n", len(jpegBytes))
+			resp.Write(jpegBytes)
+			fmt.Fprintf(resp, "\r\n")
+		}
+
+	}
 }
 
-func set_facedetect(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
+func set_facedetect(resp http.ResponseWriter, req *http.Request, bot *robot.Robot) {
 
 	if req.Method != http.MethodPost {
 		http.Error(resp, "Invalid request method", http.StatusMethodNotAllowed)
@@ -179,7 +202,7 @@ func set_facedetect(bot *robot.Robot, resp http.ResponseWriter, req *http.Reques
 	respond(resp, thisResponse)
 }
 
-func start_bot(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
+func start_bot(resp http.ResponseWriter, req *http.Request, bot *robot.Robot) {
 
 	status := fmt.Sprintf("%v, is already running", bot.Name)
 	if !bot.IsRunning {
@@ -206,7 +229,7 @@ func start_bot(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
 	respond(resp, thisResponse)
 }
 
-func stop_bot(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
+func stop_bot(resp http.ResponseWriter, req *http.Request, bot *robot.Robot) {
 
 	status := fmt.Sprintf("%v, is not running", bot.Name)
 	if bot.IsRunning {
