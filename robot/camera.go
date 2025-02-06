@@ -70,13 +70,13 @@ func InitCam() (*Cam, error) {
 	return c, nil
 }
 
-func (c *Cam) CloseCam() {
+func (c *Cam) Stop() {
 	log.Printf("Camera closed")
 	c.Webcam.Close()
 }
 
 func (c *Cam) Restart() {
-	c.CloseCam()
+	c.Stop()
 	c.Start()
 }
 
@@ -111,7 +111,7 @@ func (c *Cam) Start() {
 
 			if ok := c.Webcam.Read(&c.ImgMat); !ok {
 
-				log.Printf("Warning !! Cannot read from Camera Device: %v", ok)
+				log.Printf("Error !! Cannot read from Camera Device: %v", ok)
 				//c.RestartCam()
 				// TODO : return an error
 				return
@@ -128,9 +128,11 @@ func (c *Cam) Start() {
 				if c.DetectFaces {
 					c.FaceDetect()
 				}
+
 				buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+				defer buf.Close()
 				c.Buf = buf.GetBytes()
-				c.Stream.UpdateJPEG(buf.GetBytes())
+				c.Stream.UpdateJPEG(c.Buf)
 				//	//c.mux.Unlock()
 
 				// Sleep for a short duration to control the frame rate

@@ -37,9 +37,9 @@ func robotware(bot *robot.Robot) Middleware {
 		return func(resp http.ResponseWriter, req *http.Request) {
 
 			defer func() {
-				log.Println("Got status")
+				//log.Println("Got status")
 			}()
-			log.Println("Getting Bot status")
+			log.Println("Talking to Gizmatron")
 			bot := context.WithValue(req.Context(), "bot", bot)
 			next(resp, req.WithContext(bot))
 
@@ -74,32 +74,20 @@ func Chain(f http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 
 func Start(bot *robot.Robot, serverlog *log.Logger) error {
 
-	//Setup Server LED ( Blue LED on pin ...)
-	serverled, serverErr := robot.NewLedLine(13, "Sever Led")
-	if serverErr != nil {
-		log.Printf("Error Turning on Server LED: %v", serverErr)
-		bot.Devices["severledError"] = serverErr
-	} else {
-		bot.Devices["serverLed"] = "Operational"
-	}
-	bot.Serverled = serverled
-	// Turn the server led on now
-	// I may want to rethink the way the server light comes on.
-	if bot.Devices["severLed"] == "Operational" {
-		bot.Serverled.SetValue(1)
-	}
-
+	/* Register our routes middlewares and handlers */
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /ping", Chain(ping, logger(serverlog)))
-	mux.HandleFunc("GET /bot-status", Chain(get_status, logger(serverlog), robotware(bot)))
-	mux.HandleFunc("/bot-start", Chain(start_bot, logger(serverlog), robotware(bot)))
-	mux.HandleFunc("/bot-stop", Chain(stop_bot, logger(serverlog), robotware(bot)))
+	mux.HandleFunc("/ping", Chain(ping, logger(serverlog)))
+	mux.HandleFunc("/api/v1/bot-status", Chain(get_status, logger(serverlog), robotware(bot)))
+	mux.HandleFunc("/api/v1/bot-start", Chain(start_bot, logger(serverlog), robotware(bot)))
+	mux.HandleFunc("/api/v1/bot-stop", Chain(stop_bot, logger(serverlog), robotware(bot)))
 	mux.HandleFunc("/api/v1/detectfaces", Chain(set_facedetect, logger(serverlog), robotware(bot)))
-	mux.HandleFunc("/video", Chain(get_video, logger(serverlog), robotware(bot)))
-
+	mux.HandleFunc("/api/v1/video", Chain(get_video, logger(serverlog), robotware(bot)))
+	mux.HandleFunc("/api/v1/takepicture", Chain(take_picture, logger(serverlog), robotware(bot)))
+	//mux.Handle("/stream", bot.Camera.Stream)
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }

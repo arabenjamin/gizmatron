@@ -69,7 +69,6 @@ func get_status(resp http.ResponseWriter, req *http.Request) {
 
 	//logReq(req)
 	respond(resp, thisResponse)
-
 }
 
 func get_video(resp http.ResponseWriter, req *http.Request) {
@@ -137,15 +136,11 @@ func get_video(resp http.ResponseWriter, req *http.Request) {
 
 	/* Log camera state */
 	if bot.Camera.IsOperational && bot.Camera.IsRunning && !bot.Camera.ImgMat.Empty() {
-		log.Print("Camera is operational, running and the buffer is not empty, serving video")
-	}
-	//go bot.Camera.Stream.ServeHTTP(resp, req)
-	if !bot.Camera.ImgMat.Empty() {
-
+		log.Print("Camera is operational, running and the buffer is not empty, serving video ...")
+		// return bot.Camera.Stream
 		for {
 
-			buf, _ := gocv.IMEncode(".jpg", bot.Camera.ImgMat)
-			jpegBytes := buf.GetBytes()
+			jpegBytes := bot.Camera.Buf
 
 			// Write the frame to the HTTP response
 			fmt.Fprintf(resp, "--frame\r\n")
@@ -154,7 +149,6 @@ func get_video(resp http.ResponseWriter, req *http.Request) {
 			resp.Write(jpegBytes)
 			fmt.Fprintf(resp, "\r\n")
 		}
-
 	}
 }
 
@@ -260,5 +254,27 @@ func stop_bot(resp http.ResponseWriter, req *http.Request) {
 
 	//logReq(req)
 	respond(resp, thisResponse)
+}
 
+func take_picture(resp http.ResponseWriter, req *http.Request) {
+
+	bot := req.Context().Value("bot").(*robot.Robot)
+
+	/* Log camera state */
+	if bot.Camera.IsOperational && bot.Camera.IsRunning && !bot.Camera.ImgMat.Empty() {
+		log.Print("Camera is operational, running and the buffer is not empty, serving video")
+	}
+	if !bot.Camera.ImgMat.Empty() {
+		resp.Header().Set("Content-Type", "image/jpeg")
+
+		buf, _ := gocv.IMEncode(".jpg", bot.Camera.ImgMat)
+		jpegBytes := buf.GetBytes()
+
+		// Write the frame to the HTTP response
+		fmt.Fprintf(resp, "--frame\r\n")
+		fmt.Fprintf(resp, "Content-Type: image/jpeg\r\n")
+		fmt.Fprintf(resp, "Content-Length: %d\r\n\r\n", len(jpegBytes))
+		resp.Write(jpegBytes)
+		fmt.Fprintf(resp, "\r\n")
+	}
 }

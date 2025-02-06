@@ -172,7 +172,10 @@ func (r *Robot) Stop() (bool, error) {
 			r.Devices["ArmError"] = errMsg
 		}
 	}
-	//go r.camera.Webcam.Close()
+	if r.Camera.IsOperational && r.Camera.IsRunning && !r.Camera.ImgMat.Empty() {
+		r.Camera.Stop()
+	}
+
 	return r.IsRunning, nil
 }
 
