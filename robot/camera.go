@@ -153,6 +153,8 @@ func (c *Cam) FaceDetect() {
 	defer classifier.Close()
 
 	/*
+		TODO: I need a better way of pointing to this classifier model file.
+
 		var base_path string = os.Getenv("GOPATH") + "/src/"
 		var project_path string = base_path + "gocv.io/x/gocv/data/"
 		var xmlFile string = project_path + "haarcascade_frontalface_default.xml"
@@ -160,9 +162,11 @@ func (c *Cam) FaceDetect() {
 		if !classifier.Load(xmlFile) {
 			fmt.Printf("Error reading cascade file: %v\n", xmlFile)
 			return
-		}*/
+		}
+	*/
 
-	if !classifier.Load("/home/ara/opt/opencv/data/haarcascades/haarcascade_frontalface_default.xml") {
+	// TODO: This is cheap, and I need a better way. This is not the way.
+	if !classifier.Load("/home/ara/opencv/data/haarcascades/haarcascade_frontalface_default.xml") {
 		fmt.Println("Error: Could not load Haar Cascade classifier")
 		return
 	}

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
@@ -16,16 +17,32 @@ import (
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
 /* log the response */
-func logger(thisLogger *log.Logger) Middleware {
+func logger(serverlog *log.Logger) Middleware {
 
 	return func(next http.HandlerFunc) http.HandlerFunc {
 
 		return func(resp http.ResponseWriter, req *http.Request) {
 
 			defer func() {
-				thisLogger.Printf("[%v] [%v] [%v %v] %v\n", req.RemoteAddr, req.Method, req.Proto, req.URL.Path, req.Header["User-Agent"])
+				serverlog.Printf("[%v] [%v] [%v %v] %v\n", req.RemoteAddr, req.Method, req.Proto, req.URL.Path, req.Header["User-Agent"])
 			}()
 			next(resp, req)
+		}
+	}
+}
+
+func robotware(bot *robot.Robot) Middleware {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+
+		return func(resp http.ResponseWriter, req *http.Request) {
+
+			defer func() {
+				log.Println("Got status")
+			}()
+			log.Println("Getting Bot status")
+			bot := context.WithValue(req.Context(), "bot", bot)
+			next(resp, req.WithContext(bot))
+
 		}
 	}
 }
@@ -37,7 +54,6 @@ func respond(res http.ResponseWriter, payload map[string]interface{}) {
 	res.Header().Set("Access-Control-Allow-Origin", "*")
 	res.WriteHeader(http.StatusOK)
 	res.Write(json_resp)
-
 }
 
 func clientHash(req *http.Request) string {
@@ -56,7 +72,7 @@ func Chain(f http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 	return f
 }
 
-func Start(bot *robot.Robot, thisLogger *log.Logger) error {
+func Start(bot *robot.Robot, serverlog *log.Logger) error {
 
 	//Setup Server LED ( Blue LED on pin ...)
 	serverled, serverErr := robot.NewLedLine(13, "Sever Led")
@@ -74,14 +90,13 @@ func Start(bot *robot.Robot, thisLogger *log.Logger) error {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/ping", Chain(ping, logger(thisLogger)))
-	/*
-		mux.HandleFunc("/bot-status", Chain(get_status, bot, logger(thisLogger)))
-		mux.HandleFunc("/bot-start", Chain(start_bot, bot, logger(thisLogger)))
-		mux.HandleFunc("/bot-stop", Chain(stop_bot, bot, logger(thisLogger)))
-		mux.HandleFunc("/api/v1/detectfaces", Chain(set_facedetect, bot, logger(thisLogger)))
-		mux.HandleFunc("/video", Chain(get_video, bot, logger(thisLogger)))
-	*/
+	mux.HandleFunc("GET /ping", Chain(ping, logger(serverlog)))
+	mux.HandleFunc("GET /bot-status", Chain(get_status, logger(serverlog), robotware(bot)))
+	mux.HandleFunc("/bot-start", Chain(start_bot, logger(serverlog), robotware(bot)))
+	mux.HandleFunc("/bot-stop", Chain(stop_bot, logger(serverlog), robotware(bot)))
+	mux.HandleFunc("/api/v1/detectfaces", Chain(set_facedetect, logger(serverlog), robotware(bot)))
+	mux.HandleFunc("/video", Chain(get_video, logger(serverlog), robotware(bot)))
+
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
 		return err
