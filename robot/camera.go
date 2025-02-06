@@ -11,34 +11,6 @@ import (
 	"gocv.io/x/gocv"
 )
 
-/* Takes picture saves as .jpeg*/
-/*
-func TakePicture() {
-
-	fmt.Println("Taking Picture")
-	//webcam, err := gocv.VideoCaptureDevice(0)
-	webcam, err := gocv.OpenVideoCapture(0)
-	if err != nil {
-		fmt.Println("Error opeing webcam\n")
-		return
-	}
-	defer webcam.Close()
-
-	// prepare image matrix
-	ImgMat := gocv.NewMat()
-    defer ImgMat.Close()
-	if ok := webcam.Read(&ImgMat); !ok {
-		fmt.Println("Cannot read from Device")
-		return
-	}
-	if !ImgMat.Empty(){
-		fmt.Println("No image on device")
-		gocv.IMWrite("image.jpg", ImgMat)
-		return
-	}
-}
-*/
-
 type Cam struct {
 	IsOperational bool
 	IsRunning     bool
@@ -140,7 +112,6 @@ func (c *Cam) Start() {
 			}
 		}
 	}
-
 }
 
 func (c *Cam) FaceDetect() {
@@ -188,7 +159,40 @@ func (c *Cam) FaceDetect() {
 		}
 
 	}
+}
 
+/* Takes picture saves as .jpeg*/
+func (c *Cam) TakePicture() {
+
+	// TODO: serve jpeg to frontend
+
+	fmt.Println("Taking Picture")
+	//webcam, err := gocv.VideoCaptureDevice(0)
+	if c.Webcam == nil || c.IsOperational == false {
+		var err error
+		c.Webcam, err = gocv.OpenVideoCapture(0)
+		if err != nil {
+			fmt.Println("Error opeing webcam\n")
+			return
+
+		}
+		c.IsOperational = true
+	}
+	defer c.Webcam.Close()
+
+	if ok := c.Webcam.Read(&c.ImgMat); !ok {
+		fmt.Println("Cannot read from Device")
+		return
+	}
+
+	if !c.ImgMat.Empty() {
+		if c.DetectFaces {
+			c.FaceDetect()
+		}
+		fmt.Println("No image on device")
+		gocv.IMWrite("image.jpg", c.ImgMat)
+		return
+	}
 }
 
 /* NOTE: This is for testing and debugging/troubleshooting */
@@ -231,7 +235,6 @@ func (c *Cam) RunCamera() {
 		time.Sleep(33 * time.Millisecond) // ~30 FPS
 
 	}
-
 }
 
 /* NOTE: this should only be run for testing and debugging/troubleshooting purposes */
@@ -254,5 +257,4 @@ func (c *Cam) RunCamInWindow() {
 
 		}
 	}
-
 }
