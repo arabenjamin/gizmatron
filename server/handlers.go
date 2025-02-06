@@ -37,7 +37,10 @@ func ping(resp http.ResponseWriter, req *http.Request) {
 	return
 }
 
-func get_status(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
+func get_status(resp http.ResponseWriter, req *http.Request) {
+
+	bot := req.Context().Value("bot").(*robot.Robot)
+
 	status := fmt.Sprintf("%v, is running", bot.Name)
 	if !bot.IsRunning {
 		status = fmt.Sprintf("%v, is not running", bot.Name)
@@ -66,9 +69,10 @@ func get_status(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
 
 	//logReq(req)
 	respond(resp, thisResponse)
+
 }
 
-func get_video(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
+func get_video(resp http.ResponseWriter, req *http.Request) {
 
 	// TODO: The below is really bad, and needs to be refactored
 
@@ -76,7 +80,7 @@ func get_video(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
 
 	// TODO: Build camera running light on pysical Robot
 	/* Turn on video light*/
-
+	bot := req.Context().Value("bot").(*robot.Robot)
 	status := fmt.Sprintf("%v, is running", bot.Name)
 	// TODO: refactor .IsRunning to .IsOperational
 	if !bot.IsRunning {
@@ -154,7 +158,7 @@ func get_video(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func set_facedetect(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
+func set_facedetect(resp http.ResponseWriter, req *http.Request) {
 
 	if req.Method != http.MethodPost {
 		http.Error(resp, "Invalid request method", http.StatusMethodNotAllowed)
@@ -170,6 +174,7 @@ func set_facedetect(bot *robot.Robot, resp http.ResponseWriter, req *http.Reques
 		return
 	}
 
+	bot := req.Context().Value("bot").(*robot.Robot)
 	bot.Camera.DetectFaces = requestData.Enable
 
 	status := "Face detection disabled"
@@ -202,8 +207,9 @@ func set_facedetect(bot *robot.Robot, resp http.ResponseWriter, req *http.Reques
 	respond(resp, thisResponse)
 }
 
-func start_bot(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
+func start_bot(resp http.ResponseWriter, req *http.Request) {
 
+	bot := req.Context().Value("bot").(*robot.Robot)
 	status := fmt.Sprintf("%v, is already running", bot.Name)
 	if !bot.IsRunning {
 		status = fmt.Sprintf(" Starting %v", bot.Name)
@@ -229,8 +235,9 @@ func start_bot(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
 	respond(resp, thisResponse)
 }
 
-func stop_bot(bot *robot.Robot, resp http.ResponseWriter, req *http.Request) {
+func stop_bot(resp http.ResponseWriter, req *http.Request) {
 
+	bot := req.Context().Value("bot").(*robot.Robot)
 	status := fmt.Sprintf("%v, is not running", bot.Name)
 	if bot.IsRunning {
 		go bot.Stop()
