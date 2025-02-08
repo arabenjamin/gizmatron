@@ -76,7 +76,7 @@ func get_video(resp http.ResponseWriter, req *http.Request) {
 	// TODO: The below is really bad, and needs to be refactored
 
 	resp.Header().Set("Content-Type", "multipart/x-mixed-replace; boundary=frame")
-
+	resp.Header().Set("Transfer-Encoding", "chunked")
 	// TODO: Build camera running light on pysical Robot
 	/* Turn on video light*/
 	bot := req.Context().Value("bot").(*robot.Robot)

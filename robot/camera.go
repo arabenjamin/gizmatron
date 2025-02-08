@@ -1,9 +1,12 @@
 package robot
 
 import (
+	"bytes"
 	"fmt"
 	"image/color"
 	"log"
+	"mime/multipart"
+	"net/http"
 	"sync"
 	"time"
 
@@ -24,6 +27,15 @@ type Cam struct {
 	mux sync.Mutex
 }
 
+// CustomBufferReader reads from a byte buffer
+type CustomBufferReader struct {
+	buf *bytes.Buffer
+}
+
+func (cbr *CustomBufferReader) Read(p []byte) (n int, err error) {
+	return cbr.buf.Read(p)
+}
+
 func InitCam() (*Cam, error) {
 	c := &Cam{
 		DetectFaces:   true,
@@ -39,6 +51,23 @@ func InitCam() (*Cam, error) {
 	defer c.Webcam.Close()
 
 	log.Printf("Camera is Initiated")
+
+	if c.IsOperational {
+
+		resp, err := http.Get("http://localhost:9090/api/v1/ping")
+		if err != nil {
+			log.Printf("Unable to reach Control server, Request returned Error: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusOK {
+			go c.StreamToServer()
+		} else {
+			log.Printf("Unable to reach control server, Response returned StatusCode: %v", resp.StatusCode)
+		}
+
+	}
+
 	return c, nil
 }
 
@@ -192,6 +221,51 @@ func (c *Cam) TakePicture() {
 		fmt.Println("No image on device")
 		gocv.IMWrite("image.jpg", c.ImgMat)
 		return
+	}
+}
+
+func (c *Cam) StreamToServer() {
+
+	// TODO: Write tests to verify I've done this correctly
+
+	client := &http.Client{}
+
+	for {
+
+		var body bytes.Buffer
+		writer := multipart.NewWriter(&body)
+		part, err := writer.CreateFormFile("frame", "frame.jpg")
+		if err != nil {
+			log.Fatal(err)
+		}
+		part.Write(c.Buf)
+		writer.Close()
+
+		//bufferReader := &CustomBufferReader{buf: bytes.NewBuffer(c.Buf)}
+		//log.Println("Makeing request")
+		req, err := http.NewRequest("POST", "http://localhost:9090/api/v1/upload", &body) //
+		if err != nil {
+			log.Fatal(err)
+		}
+		//req.Header.Set("Content-Type", "multipart/x-mixed-replace; boundary=frame")
+		req.Header.Set("Content-Type", "video/mp4")
+		req.Header.Set("Transfer-Encoding", "chunked")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Printf("Connection terminated: %v", err)
+		}
+		defer resp.Body.Close()
+
+		//log.Printf("Request results %d", resp.StatusCode)
+		if resp.StatusCode != http.StatusOK {
+			log.Println("Response from Server: ", resp.StatusCode)
+			break
+		}
+
+		// Sleep for a short duration to control the frame rate
+		time.Sleep(33 * time.Millisecond) // ~30 FPS
+
 	}
 }
 
