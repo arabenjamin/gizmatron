@@ -150,8 +150,8 @@ func (r *Robot) Start() (bool, error) {
 
 	if r.Camera.IsOperational {
 		// TODO: This should probably have an error handler
-		r.Camera.DetectFaces = true
-		log.Printf("Detecting Faces")
+		//r.Camera.DetectFaces = true
+		//log.Printf("Detecting Faces")
 		go r.Camera.Start()
 		log.Printf("Turning on Camera")
 	}
