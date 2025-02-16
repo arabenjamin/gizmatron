@@ -100,8 +100,6 @@ func (c *Cam) Start() {
 
 	if c.IsOperational {
 
-		c.DetectFaces = true
-
 		// prepare image matrix
 		c.ImgMat = gocv.NewMat()
 		defer c.ImgMat.Close()
