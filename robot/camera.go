@@ -38,7 +38,7 @@ func (cbr *CustomBufferReader) Read(p []byte) (n int, err error) {
 
 func InitCam() (*Cam, error) {
 	c := &Cam{
-		DetectFaces:   true,
+		DetectFaces:   false,
 		IsOperational: true,
 	}
 
@@ -52,21 +52,22 @@ func InitCam() (*Cam, error) {
 
 	log.Printf("Camera is Initiated")
 
-	if c.IsOperational {
+	/*
+		if c.IsOperational {
 
-		resp, err := http.Get("http://localhost:9090/api/v1/ping")
-		if err != nil {
-			log.Printf("Unable to reach Control server, Request returned Error: %v", err)
+			resp, err := http.Get("http://localhost:9090/api/v1/ping")
+			if err != nil {
+				log.Printf("Unable to reach Control server, Request returned Error: %v", err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode == http.StatusOK {
+				go c.StreamToServer()
+			} else {
+				log.Printf("Unable to reach control server, Response returned StatusCode: %v", resp.StatusCode)
+			}
 		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == http.StatusOK {
-			go c.StreamToServer()
-		} else {
-			log.Printf("Unable to reach control server, Response returned StatusCode: %v", resp.StatusCode)
-		}
-
-	}
+	*/
 
 	return c, nil
 }
