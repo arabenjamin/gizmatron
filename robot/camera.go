@@ -42,7 +42,7 @@ func InitCam() (*Cam, error) {
 		IsOperational: true,
 	}
 
-	c.Webcam, c.err = gocv.OpenVideoCapture(0)
+	c.Webcam, c.err = gocv.OpenVideoCapture(-1)
 	if c.err != nil {
 		log.Printf("Error opening webcam")
 		c.IsOperational = false
@@ -89,7 +89,7 @@ func (c *Cam) Start() {
 
 	if c.Webcam == nil {
 		var err error
-		c.Webcam, err = gocv.OpenVideoCapture(0)
+		c.Webcam, err = gocv.OpenVideoCapture(-1)
 		if err != nil {
 			fmt.Println("Error: Could not open webcam")
 			return
@@ -105,16 +105,16 @@ func (c *Cam) Start() {
 		defer c.ImgMat.Close()
 
 		// create the mjpeg stream
-		c.Stream = mjpeg.NewStream()
+		//c.Stream = mjpeg.NewStream()
 
 		for {
 
 			if ok := c.Webcam.Read(&c.ImgMat); !ok {
 
 				log.Printf("Error !! Cannot read from Camera Device: %v", ok)
-				//c.RestartCam()
-				// TODO : return an error
-				return
+				c.IsOperational = false
+
+				continue
 			}
 
 			if c.ImgMat.Empty() {
@@ -132,7 +132,7 @@ func (c *Cam) Start() {
 				buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
 				defer buf.Close()
 				c.Buf = buf.GetBytes()
-				c.Stream.UpdateJPEG(c.Buf)
+				//c.Stream.UpdateJPEG(c.Buf)
 				//	//c.mux.Unlock()
 
 				// Sleep for a short duration to control the frame rate
@@ -293,8 +293,11 @@ func (c *Cam) RunCamera() {
 
 		c.IsRunning = true
 		if ok := c.Webcam.Read(&c.ImgMat); !ok {
-			fmt.Println("Error: Could not read a frame from the webcam")
-			return
+
+			log.Printf("Error !! Cannot read from Camera Device: %v", ok)
+			c.IsOperational = false
+
+			continue
 		}
 		if c.ImgMat.Empty() {
 			continue
