@@ -13,27 +13,12 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+      - name: Checkout
+        uses: actions/checkout@v4
+
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.23'
-
-    - name: Install OpenCV
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libopencv-dev
-        echo "/usr/local/lib" | sudo tee -a /etc/ld.so.conf.d/opencv.conf
-        sudo ldconfig
-
-    - name: Set PKG_CONFIG_PATH
-      run: echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig" >> $GITHUB_ENV
-
-    - name: Build Gizmatron
-      run: go build 
-
+      - name: Build Docker
+        run: docker build -t gizmatron .
 
   deploy:
     runs-on: self-hosted
