@@ -25,7 +25,7 @@ jobs:
     steps:
       
       - name: Make sure we're in the right directory
-        run: pwd  
+        run: pwd && ls -lah 
 
       - name: Build docker image
         run: sudo docker build -t gizmatron .
