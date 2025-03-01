@@ -24,7 +24,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Build docker image
-        run: docker build -t gizmatron .
+        run: sudo docker build -t gizmatron .
 
       - name: Run docker container
-        run: docker run --device /dev/video0:/dev/video0 -p 8080:8080 gizmatron
+        run: sudo docker run --device /dev/video0:/dev/video0 -p 8080:8080 gizmatron
