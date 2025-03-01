@@ -23,8 +23,6 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
-      - name: Clone repository
-        run: git clone https://github.com/arabenjamin/gizmatron
       
       - name: Make sure we're in the right directory
         run: pwd  
