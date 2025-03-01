@@ -21,8 +21,15 @@ jobs:
       with:
         go-version: '1.23'
 
-    - name: Build
-      run: go build -v ./...
-
     - name: Test
       run: go test -v ./...
+
+
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Build docker image
+        run: docker build -t gizmatron .
+
+      - name: Run docker container
+        run: docker run --device /dev/video0:/dev/video0 -p 8080:8080 gizmatron
