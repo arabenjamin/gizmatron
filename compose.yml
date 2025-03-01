@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  gizmatron:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - "/dev/video0:/dev/video0"
+      - "/dev/gpiomem:/dev/gpiomem"
+    privileged: true
+

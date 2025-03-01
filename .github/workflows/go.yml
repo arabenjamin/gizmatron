@@ -27,14 +27,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4 
-      - name: Make sure we're in the right directory
-        run: pwd && ls -lah 
     
-      - name: Run message
-        run: echo "This is the wrong directory"
+      - name: Stop any running containers
+        run: sudo docker stop $(sudo docker ps -a -q)
+
+      - name: Remove any remaining containers 
+        run: sudo docker prune
+
+      - name: Remove old docker images
+        run: sudo docker image prune
 
       - name: Build docker image
         run: sudo docker build -t gizmatron .
 
       - name: Run docker container
-        run: sudo docker run --device /dev/video0:/dev/video0 -p 8080:8080 gizmatron
+        run: sudo docker run -d --device /dev/video0:/dev/video0 -p 8080:8080 gizmatron
