@@ -25,6 +25,7 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
+      - name: Checkout
         uses: actions/checkout@v4 
       - name: Make sure we're in the right directory
         run: pwd && ls -lah 
