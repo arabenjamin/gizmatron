@@ -23,6 +23,8 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
+      - name: Clone repository
+        run: git clone https://github.com/arabenjamin/gizmatron && cd gizmatron
       - name: Build docker image
         run: sudo docker build -t gizmatron .
 
