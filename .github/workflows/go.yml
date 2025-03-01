@@ -9,6 +9,8 @@ on:
   pull_request:
     branches: [ "main" ]
 
+  workflow_dispatch:
+
 jobs:
 
   build:
@@ -23,7 +25,7 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
-      
+        uses: actions/checkout@v4 
       - name: Make sure we're in the right directory
         run: pwd && ls -lah 
     
