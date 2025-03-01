@@ -32,7 +32,7 @@ jobs:
         run: sudo docker stop $(sudo docker ps -a -q)
 
       - name: Remove any remaining containers 
-        run: sudo docker prune
+        run: sudo docker container prune
 
       - name: Remove old docker images
         run: sudo docker image prune
