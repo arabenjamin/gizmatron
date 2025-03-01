@@ -26,6 +26,9 @@ jobs:
       
       - name: Make sure we're in the right directory
         run: pwd && ls -lah 
+    
+      - name: Run message
+        run: echo "This is the wrong directory"
 
       - name: Build docker image
         run: sudo docker build -t gizmatron .
