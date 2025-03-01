@@ -26,6 +26,7 @@ jobs:
       - name: Clone repository
         run: git clone https://github.com/arabenjamin/gizmatron && cd gizmatron
       - name: Build docker image
+        run: pwd
         run: sudo docker build -t gizmatron .
 
       - name: Run docker container
