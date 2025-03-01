@@ -159,11 +159,22 @@ WORKDIR /app
 
 
 RUN apk update && \
-    apk add --no-cache git pkgconf wget
+    apk add --no-cache git pkgconf wget musl-dev bash go && \
+    apk add --no-cache --upgrade
 
 # Install Golang
-RUN wget https://golang.org/dl/go1.23.5.linux-amd64.tar.gz && \
-    tar -C /usr/local -xzf go1.23.5.linux-amd64.tar.gz
+RUN wget https://golang.org/dl/go1.23.6.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz
+
+# configure Go
+#ENV GOROOT /usr/local/go
+#ENV GOPATH /go
+#ENV PATH $GOROOT/bin:$PATH
+
+# Set GOPATH mode
+RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
+ENV PATH /go/bin:$PATH
+RUN echo $PATH
 
 # Copy OpenCV libraries from the build stage
 COPY --from=opencv-builder-amd64 /app/opencv/build/lib/* /usr/local/lib/
@@ -184,10 +195,10 @@ RUN go list -m gocv.io/x/gocv
 ENV PKG_CONFIG_PATH="/usr/local/lib/pkgconfig"
 RUN pkg-config --cflags --libs opencv4
 
-ENV LD_LIBRARY_PATH /usr/local/lib
-ENV CGO_CPPFLAGS -I/usr/local/include
-ENV CGO_CXXFLAGS "--std=c++1z"
-ENV CGO_LDFLAGS "-L/usr/local/lib -lopencv_core -lopencv_face -lopencv_videoio -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs -lopencv_objdetect -lopencv_features2d -lopencv_video -lopencv_dnn -lopencv_xfeatures2d -lopencv_plot -lopencv_tracking"
+#ENV LD_LIBRARY_PATH /usr/local/lib
+#ENV CGO_CPPFLAGS -I/usr/local/include
+#ENV CGO_CXXFLAGS "--std=c++1z"
+#ENV CGO_LDFLAGS "-L/usr/local/lib -lopencv_core -lopencv_face -lopencv_videoio -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs -lopencv_objdetect -lopencv_features2d -lopencv_video -lopencv_dnn -lopencv_xfeatures2d -lopencv_plot -lopencv_tracking"
 
 
 RUN go build -tags opencv-go -o gizmatron-amd64
@@ -195,23 +206,44 @@ RUN go build -tags opencv-go -o gizmatron-amd64
 
 
 ###### Stage 4: Build Go for arm64 (Almost identical to amd64 stage)
-FROM golang:1.23-alpine AS builder-arm64
+FROM --platform=linux/arm64 arm64v8/golang:1.23-alpine AS builder-arm64
 ENV GOOS=linux
 ENV GOARCH=arm64
-WORKDIR /app
+
+
 
 RUN apk update && \
-    apk add --no-cache git pkgconf wget
+    apk add --no-cache git wget gcc bash libc6-compat musl-dev openssl-dev ca-certificates && update-ca-certificates
+
+
 
 # Install Golang
-RUN wget https://golang.org/dl/go1.23.5.linux-arm64.tar.gz && \
-    tar -C /usr/local -xzf go1.23.5.linux-arm64.tar.gz
+#RUN rm -fr /usr/local/go
+#RUN wget https://golang.org/dl/go1.23.6.linux-arm64.tar.gz && \
+#    tar -C /usr/local -xzf go1.23.6.linux-arm64.tar.gz
+
+
+# configure Go
+ENV GOROOT /usr/local/go
+ENV GOPATH /go
+ENV PATH $GOROOT/bin:$PATH
+ENV PATH /go/bin:$PATH
+
+RUN ls -l /usr/local/go
+RUN cat /usr/local/go/VERSION
+RUN go version
+
+
+# Set GOPATH mode
+RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
+
 
 COPY --from=opencv-builder-arm64 /app/opencv/build/lib/* /usr/local/lib/
 COPY --from=opencv-builder-arm64 /app/opencv/build/include/* /usr/local/include/
 COPY --from=opencv-builder-arm64 /app/opencv/CMakeLists.txt /usr/local/share/OpenCV/
 COPY --from=opencv-builder-arm64 /usr/local/lib/pkgconfig/opencv4.pc /usr/local/lib/pkgconfig/
 
+WORKDIR /app
 
 # Clone the project repository and build the Go application
 RUN git clone https://github.com/arabenjamin/gizmatron.git 
@@ -220,7 +252,7 @@ WORKDIR /app/gizmatron
 
 RUN go mod download
 
-RUN go get -u -d gocv.io/x/gocv
+#RUN go install gocv.io/x/gocv
 RUN go list -m gocv.io/x/gocv    
 
 # Set up pkg-config for OpenCV. This is very important!
@@ -231,7 +263,7 @@ ENV LD_LIBRARY_PATH /usr/local/lib
 ENV CGO_CPPFLAGS -I/usr/local/include
 ENV CGO_CXXFLAGS "--std=c++1z"
 ENV CGO_LDFLAGS "-L/usr/local/lib -lopencv_core -lopencv_face -lopencv_videoio -lopencv_imgproc -lopencv_highgui -lopencv_imgcodecs -lopencv_objdetect -lopencv_features2d -lopencv_video -lopencv_dnn -lopencv_xfeatures2d -lopencv_plot -lopencv_tracking"
-
+ENV CGO_ENABLED=0
 
 RUN go build -v -tags opencv-go -o gizmatron-arm64
 
