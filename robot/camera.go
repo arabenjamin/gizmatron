@@ -48,7 +48,6 @@ func InitCam() (*Cam, error) {
 		c.IsOperational = false
 		return c, c.err
 	}
-	defer c.Webcam.Close()
 
 	log.Printf("Camera is Initiated")
 
@@ -96,7 +95,6 @@ func (c *Cam) Start() {
 		}
 		c.IsOperational = true
 	}
-	defer c.Webcam.Close()
 
 	if c.IsOperational {
 
