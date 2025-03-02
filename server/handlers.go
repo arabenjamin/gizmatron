@@ -59,8 +59,8 @@ func get_status(resp http.ResponseWriter, req *http.Request) {
 		"camera_state": map[string]interface{}{
 			"operational": bot.Camera.IsOperational,
 			"running":     bot.Camera.IsRunning,
-			"empty":       bot.Camera.ImgMat.Empty(),
-			"Detected":    bot.Camera.DetectFaces,
+			//"empty":       bot.Camera.ImgMat.Empty(),
+			"Detected": bot.Camera.DetectFaces,
 		},
 		"device_status": bot.Devices,
 		"botname":       bot.Name,
