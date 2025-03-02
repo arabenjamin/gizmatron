@@ -84,6 +84,12 @@ func (c *Cam) Restart() {
 /* Start reading from the camera to the Buffer */
 func (c *Cam) Start() {
 
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Recovered from panic:", r)
+		}
+	}()
+
 	log.Printf("Starting Camera stream ...")
 
 	if c.Webcam == nil {
@@ -139,6 +145,7 @@ func (c *Cam) Start() {
 			}
 		}
 	}
+
 }
 
 func (c *Cam) FaceDetect() {
