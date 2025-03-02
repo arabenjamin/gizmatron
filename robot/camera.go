@@ -111,8 +111,9 @@ func (c *Cam) Start() {
 
 				log.Printf("Error !! Cannot read from Camera Device: %v", ok)
 				c.IsOperational = false
+				c.IsRunning = false
 
-				continue
+				break
 			}
 
 			if c.ImgMat.Empty() {
