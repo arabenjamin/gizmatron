@@ -109,7 +109,7 @@ func (c *Cam) Start() {
 		defer c.ImgMat.Close()
 
 		// create the mjpeg stream
-		//c.Stream = mjpeg.NewStream()
+		c.Stream = mjpeg.NewStream()
 
 		for {
 
@@ -119,7 +119,7 @@ func (c *Cam) Start() {
 				c.IsOperational = false
 				c.IsRunning = false
 
-				break
+				return
 			}
 
 			if c.ImgMat.Empty() {
@@ -135,11 +135,11 @@ func (c *Cam) Start() {
 				}
 
 				buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
-				defer buf.Close()
-				c.Buf = buf.GetBytes()
-				//c.Stream.UpdateJPEG(c.Buf)
-				//	//c.mux.Unlock()
 
+				c.Buf = buf.GetBytes()
+				c.Stream.UpdateJPEG(c.Buf)
+				//	//c.mux.Unlock()
+				buf.Close()
 				// Sleep for a short duration to control the frame rate
 				time.Sleep(33 * time.Millisecond) // ~30 FPS
 			}

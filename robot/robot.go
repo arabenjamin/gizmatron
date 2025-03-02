@@ -83,14 +83,16 @@ func (r *Robot) initDevices() error {
 	// an empty list should mean that all the devices are runnning and operational
 
 	/* Setup our running LED*/
+	r.Devices["runningLed"] = "Operational"
 	runningled, runLedErr := NewLedLine(RUNNING_LED, "Running LED")
 	if runLedErr != nil {
 
 		log.Printf("Warning !! Running LED Failed: %v", runLedErr)
 		r.Devices["runningLedError"] = runLedErr
+		r.Devices["runningLed"] = "Not Operational"
 		// TODO: set device error list
 	}
-	r.Devices["runningLed"] = "Operational"
+
 	r.runningled = runningled
 
 	/* Setup Arm */

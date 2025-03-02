@@ -146,8 +146,9 @@ func get_video(resp http.ResponseWriter, req *http.Request) {
 			fmt.Fprintf(resp, "--frame\r\n")
 			fmt.Fprintf(resp, "Content-Type: image/jpeg\r\n")
 			fmt.Fprintf(resp, "Content-Length: %d\r\n\r\n", len(jpegBytes))
-			resp.Write(jpegBytes)
-			fmt.Fprintf(resp, "\r\n")
+			bot.Camera.Stream.ServeHTTP(resp, req)
+			//resp.Write(jpegBytes)
+			//fmt.Fprintf(resp, "\r\n")
 		}
 	}
 }
