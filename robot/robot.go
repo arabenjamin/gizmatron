@@ -48,7 +48,6 @@ func InitRobot() (*Robot, error) {
 		Name:    "Gizmatron",
 		adaptor: raspi.NewAdaptor(),
 		Devices: make(map[string]interface{}),
-		Camera:  &Cam{},
 	}
 
 	/* Start our devices*/
@@ -118,14 +117,15 @@ func (r *Robot) initDevices() error {
 	}
 
 	/* Set up pur camera */
-	cam, camerr := InitCam()
+	var camerr error
+	r.Camera, camerr = InitCam()
 	if camerr != nil {
 		errMsg := fmt.Sprintf("Warning !! Camera Initialization Failed: %v", camerr)
 		log.Print(errMsg)
 		r.Devices["CameraError"] = camerr
 	}
 
-	if cam.IsOperational {
+	if r.Camera.IsOperational {
 		r.Devices["Camera"] = "Operational"
 		log.Printf("Camera is operational")
 		//go r.Camera.RunCamera()
