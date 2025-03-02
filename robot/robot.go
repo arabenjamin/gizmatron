@@ -129,7 +129,7 @@ func (r *Robot) initDevices() error {
 		r.Devices["Camera"] = "Operational"
 		log.Printf("Camera is operational")
 		//go r.Camera.RunCamera()
-		go r.Camera.Start()
+		//go r.Camera.Start()
 
 	}
 

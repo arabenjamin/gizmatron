@@ -24,7 +24,8 @@ type Cam struct {
 	Stream        *mjpeg.Stream
 	Buf           []byte
 	//Img *image.Image
-	mux sync.Mutex
+	mux        sync.Mutex
+	StopStream chan bool
 }
 
 // CustomBufferReader reads from a byte buffer
@@ -48,6 +49,15 @@ func InitCam() (*Cam, error) {
 		c.IsOperational = false
 		return c, c.err
 	}
+
+	// prepare image matrix
+	c.ImgMat = gocv.NewMat()
+	defer c.ImgMat.Close()
+
+	// create the mjpeg stream
+	c.Stream = mjpeg.NewStream()
+
+	c.StopStream = make(chan bool)
 
 	log.Printf("Camera is Initiated")
 
@@ -73,6 +83,8 @@ func InitCam() (*Cam, error) {
 
 func (c *Cam) Stop() {
 	log.Printf("Camera closed")
+	c.StopStream <- true
+	c.IsRunning = false
 	c.Webcam.Close()
 }
 
@@ -91,58 +103,51 @@ func (c *Cam) Start() {
 	}()
 
 	log.Printf("Starting Camera stream ...")
-
-	if c.Webcam == nil {
-		var err error
-		c.Webcam, err = gocv.OpenVideoCapture(-1)
-		if err != nil {
-			fmt.Println("Error: Could not open webcam")
-			return
-		}
-		c.IsOperational = true
-	}
-
+	c.IsRunning = true
 	if c.IsOperational {
-
-		// prepare image matrix
-		c.ImgMat = gocv.NewMat()
-		defer c.ImgMat.Close()
-
-		// create the mjpeg stream
-		c.Stream = mjpeg.NewStream()
 
 		for {
 
-			if ok := c.Webcam.Read(&c.ImgMat); !ok {
-
-				log.Printf("Error !! Cannot read from Camera Device: %v", ok)
-				c.IsOperational = false
+			select {
+			case <-c.StopStream:
+				log.Printf("Stopping Camera Stream")
 				c.IsRunning = false
-
+				c.Webcam.Close()
 				return
-			}
+			default:
 
-			if c.ImgMat.Empty() {
-				log.Printf("Image Matrix is empty, moving forward ")
-				continue
-			}
+				if ok := c.Webcam.Read(&c.ImgMat); !ok {
 
-			if !c.ImgMat.Empty() {
-				c.IsRunning = true
-				//c.mux.Lock()
-				if c.DetectFaces {
-					c.FaceDetect()
+					log.Printf("Error !! Cannot read from Camera Device: %v", ok)
+					c.IsOperational = false
+					c.IsRunning = false
+					c.StopStream <- true
+					return
+				}
+				if c.ImgMat.Empty() {
+					log.Printf("Image Matrix is empty, moving forward ")
+					continue
 				}
 
-				buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+				if !c.ImgMat.Empty() {
+					c.IsRunning = true
+					//c.mux.Lock()
+					if c.DetectFaces {
+						c.FaceDetect()
+					}
 
-				c.Buf = buf.GetBytes()
-				c.Stream.UpdateJPEG(c.Buf)
-				//	//c.mux.Unlock()
-				buf.Close()
-				// Sleep for a short duration to control the frame rate
-				time.Sleep(33 * time.Millisecond) // ~30 FPS
+					buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+
+					c.Buf = buf.GetBytes()
+					c.Stream.UpdateJPEG(c.Buf)
+					//	//c.mux.Unlock()
+					buf.Close()
+					// Sleep for a short duration to control the frame rate
+					time.Sleep(33 * time.Millisecond) // ~30 FPS
+				}
+
 			}
+
 		}
 	}
 
