@@ -38,6 +38,7 @@ func (cbr *CustomBufferReader) Read(p []byte) (n int, err error) {
 }
 
 func InitCam() (*Cam, error) {
+	log.Printf("Initializing Camera ...")
 	c := &Cam{
 		DetectFaces:   false,
 		IsOperational: true,
@@ -59,8 +60,6 @@ func InitCam() (*Cam, error) {
 
 	c.StopStream = make(chan bool)
 
-	log.Printf("Camera is Initiated")
-
 	/*
 		if c.IsOperational {
 
@@ -77,20 +76,23 @@ func InitCam() (*Cam, error) {
 			}
 		}
 	*/
-
+	log.Printf("Camera Ready ...")
 	return c, nil
 }
 
 func (c *Cam) Stop() {
-	log.Printf("Camera closed")
+	log.Printf("Closing Camera ....")
 	c.StopStream <- true
 	c.IsRunning = false
 	c.Webcam.Close()
+	log.Printf("Camera Closed")
 }
 
 func (c *Cam) Restart() {
+	log.Printf("Restarting Camera ...")
 	c.Stop()
-	c.Start()
+	go c.Start()
+	log.Printf("Restarted camera successfully")
 }
 
 /* Start reading from the camera to the Buffer */
@@ -110,20 +112,19 @@ func (c *Cam) Start() {
 
 			select {
 			case <-c.StopStream:
-				log.Printf("Stopping Camera Stream")
-				c.IsRunning = false
-				c.Webcam.Close()
+				log.Printf("Stopping Camera Stream..")
+				c.Stop()
 				return
+
 			default:
 
 				if ok := c.Webcam.Read(&c.ImgMat); !ok {
 
 					log.Printf("Error !! Cannot read from Camera Device: %v", ok)
-					c.IsOperational = false
-					c.IsRunning = false
-					c.StopStream <- true
+					c.Stop()
 					return
 				}
+
 				if c.ImgMat.Empty() {
 					log.Printf("Image Matrix is empty, moving forward ")
 					continue

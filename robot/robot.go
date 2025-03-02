@@ -85,8 +85,6 @@ func (r *Robot) initDevices() error {
 	r.Devices["runningLed"] = "Operational"
 	runningled, runLedErr := NewLedLine(RUNNING_LED, "Running LED")
 	if runLedErr != nil {
-
-		log.Printf("Warning !! Running LED Failed: %v", runLedErr)
 		r.Devices["runningLedError"] = runLedErr
 		r.Devices["runningLed"] = "Not Operational"
 		// TODO: set device error list
@@ -148,6 +146,7 @@ func (r *Robot) Start() (bool, error) {
 			log.Print(errMsg)
 			r.Devices["ArmError"] = errMsg
 		}
+
 	}
 
 	if r.Camera.IsOperational {
@@ -174,6 +173,7 @@ func (r *Robot) Stop() (bool, error) {
 			r.Devices["ArmError"] = errMsg
 		}
 	}
+
 	if r.Camera.IsOperational && r.Camera.IsRunning && !r.Camera.ImgMat.Empty() {
 		r.Camera.Stop()
 	}

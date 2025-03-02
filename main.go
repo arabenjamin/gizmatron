@@ -12,6 +12,9 @@ func main() {
 
 	serverlog := log.New(os.Stdout, "http: ", log.LstdFlags)
 	log.Println("Starting Gizmatron")
+	log.Println("This Robot sucks")
+	log.Println("Never trust a droid")
+	log.Println("Why let a droid do what a man can do !!")
 
 	/*
 		Initialize the Robot.
@@ -24,11 +27,6 @@ func main() {
 	if oops != nil {
 		log.Println("something real bad happened try to initialize the bot ... going down ...")
 		log.Println(oops)
-	}
-
-	// Ensure the camera is initialized
-	if bot.Camera == nil {
-		bot.Camera = &robot.Cam{}
 	}
 
 	/*  Seems like we have a bot to work with */
