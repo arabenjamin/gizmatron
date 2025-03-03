@@ -16,7 +16,7 @@ func NewLedLine(pin int, label string) (*gpiocdev.Line, error) {
 	// I'm just assuming that I'll never need a different chip
 	line, err := gpiocdev.RequestLine("gpiochip0", pin, gpiocdev.AsOutput(0), gpiocdev.WithConsumer(label))
 	if err != nil {
-		log.Printf("Error Turning on Led %v: %v", label, err)
+		log.Printf("Error Turning on LED: %v: %v", label, err)
 
 		return nil, err
 	}

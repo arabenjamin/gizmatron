@@ -11,10 +11,9 @@ import (
 func main() {
 
 	serverlog := log.New(os.Stdout, "http: ", log.LstdFlags)
+	robotlog := log.New(os.Stdout, "ROBOT: ", log.LstdFlags)
 	log.Println("Starting Gizmatron")
 	log.Println("This Robot sucks")
-	log.Println("Never trust a droid")
-	log.Println("Why let a droid do what a man can do !!")
 
 	/*
 		Initialize the Robot.
@@ -23,7 +22,7 @@ func main() {
 		though it may initialize without the use of some components.
 		This is here so we can go figure out what any other catastophic event happend.
 	*/
-	bot, oops := robot.InitRobot()
+	bot, oops := robot.InitRobot(robotlog)
 	if oops != nil {
 		log.Println("something real bad happened try to initialize the bot ... going down ...")
 		log.Println(oops)
@@ -36,9 +35,8 @@ func main() {
 	bot.Devices["serverLed"] = "Operational"
 	serverled, serverErr := robot.NewLedLine(13, "Sever Led")
 	if serverErr != nil {
-		log.Printf("Error Turning on Server LED: %v", serverErr)
 		bot.Devices["severledError"] = serverErr
-		bot.Devices["serverLed"] = "NOT Operational"
+		bot.Devices["serverLed"] = "Not Operational"
 	}
 	bot.Serverled = serverled
 	// Turn the server led on now
@@ -48,13 +46,13 @@ func main() {
 	}
 
 	/* Strart the server */
-	serverlog.Println("Starting Gizmatron api server...")
+	serverlog.Println("SERVER: Starting Gizmatron api server...")
 	err := server.Start(bot, serverlog)
 	if err != nil {
 		/*
 			Ideally the server should always be available
 		*/
-		serverlog.Println("something real bad happened to the server ... going down ...")
+		serverlog.Println("SERVER: something real bad happened to the server ... going down ...")
 		serverlog.Println(err)
 		bot.Serverled.SetValue(0)
 	}
