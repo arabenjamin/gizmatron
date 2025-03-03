@@ -38,7 +38,7 @@ jobs:
         run: sudo docker image prune
 
       - name: Build docker image
-        run: sudo docker build -t gizmatron .
+        run: sudo docker build --no-cache -t gizmatron:latest . 
 
       - name: Run docker container
-        run: sudo docker run -d --device /dev/video0:/dev/video0 -p 8080:8080 gizmatron
+        run: sudo docker run -d --device /dev/video0:/dev/video0 -p 8080:8080 gizmatron:latest
