@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4 
     
       - name: Stop any running containers
-        run: sudo docker stop $(sudo docker ps -a -q)
+        run: ids=$(sudo docker ps -a -q) | for id in $ids; do sudo docker stop $id && sudo docker rm &id; done
 
       - name: Remove any remaining containers 
         run: sudo docker container prune -y
