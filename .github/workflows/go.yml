@@ -32,10 +32,10 @@ jobs:
         run: ids=$(sudo docker ps -a -q) | for id in $ids; do sudo docker stop $id && sudo docker rm &id; done
 
       - name: Remove any remaining containers 
-        run: sudo docker container prune -y
+        run: sudo docker container prune
 
       - name: Remove old docker images
-        run: sudo docker image prune -y
+        run: sudo docker image prune
 
       - name: Build docker image
         run: sudo docker build -t gizmatron .
