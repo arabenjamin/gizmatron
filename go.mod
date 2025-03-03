@@ -1,11 +1,10 @@
-module arabenjamin/gizmatron
+module github.com/arabenjamin/gizmatron
 
-go 1.23
+go 1.22.6
 
 toolchain go1.23.6
 
 require (
-	github.com/arabenjamin/gizmatron v0.0.0-20250218090319-22e4fe6e92de
 	github.com/hybridgroup/mjpeg v0.0.0-20140228234708-4680f319790e
 	github.com/warthog618/go-gpiocdev v0.9.1
 	gobot.io/x/gobot/v2 v2.5.0
