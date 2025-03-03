@@ -39,18 +39,21 @@ type Robot struct {
 	arm        *Arm
 	Camera     *Cam
 	Devices    map[string]interface{}
+	log        *log.Logger
 }
 
-func InitRobot() (*Robot, error) {
+func InitRobot(botlog *log.Logger) (*Robot, error) {
 
-	log.Println("Initializing startup ")
+	botlog.Println("Initializing Gizmatron startup ...")
 	robot := &Robot{
 		Name:    "Gizmatron",
 		adaptor: raspi.NewAdaptor(),
 		Devices: make(map[string]interface{}),
+		log:     botlog,
 	}
 
 	/* Start our devices*/
+	robot.log.Println("Initalizing Gizmatron Devices ...")
 	robot.IsRunning = true
 	err := robot.initDevices()
 	if err != nil {
@@ -58,19 +61,20 @@ func InitRobot() (*Robot, error) {
 		// When initDevices() runs,
 		// we want it to tell us which devices have errors, not that initDevices()
 		// had errors
-		log.Printf("%v failed to intialize device: %v", robot.Name, err)
+		robot.log.Printf("%v failed to intialize device: %v", robot.Name, err)
 		robot.IsRunning = false
 	}
+	robot.log.Println("Gizmatron devices initialized.")
 
 	// NOTE: IF we dont make this check and try to change the value of a non-existent pin ...
 	// really narly shit happens.
 	// Rember to mind you P's and Q's
-	if robot.Devices["runningLedError"] == "Operational" {
+	if robot.Devices["runningLed"] == "Operational" {
 		// Turn on our operating light
 		robot.runningled.SetValue(1)
 	}
 
-	log.Println("Startup Complete")
+	robot.log.Println("Gizmatron Startup Complete.")
 	return robot, nil
 }
 
@@ -95,8 +99,8 @@ func (r *Robot) initDevices() error {
 	/* Setup Arm */
 	arm, err := InitArm(r.adaptor)
 	if err != nil {
-		errmsg := fmt.Sprintf("Warning!! Arm Initialization Failed!: %v", err)
-		log.Print(errmsg)
+		errmsg := fmt.Sprintf("Warning!! Failed to initialize arm!: %v", err)
+		r.log.Print(errmsg)
 		// TODO Set the arm error in the device status
 		r.Devices["armError"] = errmsg
 	}
@@ -107,7 +111,7 @@ func (r *Robot) initDevices() error {
 		armled, armLedErr := NewLedLine(ARM_LED, "Arm LED")
 		if armLedErr != nil {
 			errMsg := fmt.Sprintf("Warning!! Arm LED Failed: %v", armLedErr)
-			log.Print(errMsg)
+			r.log.Print(errMsg)
 			r.Devices["ArmLedError"] = armLedErr
 		}
 		r.Devices["ArmLed"] = "Operational"
@@ -118,14 +122,14 @@ func (r *Robot) initDevices() error {
 	var camerr error
 	r.Camera, camerr = InitCam()
 	if camerr != nil {
-		errMsg := fmt.Sprintf("Warning !! Camera Initialization Failed: %v", camerr)
+		errMsg := fmt.Sprintf("Warning !! Failed to intialize camera: %v", camerr)
 		log.Print(errMsg)
 		r.Devices["CameraError"] = camerr
 	}
+	//defer r.Camera.Stop()
 
 	if r.Camera.IsOperational {
 		r.Devices["Camera"] = "Operational"
-		log.Printf("Camera is operational")
 		//go r.Camera.RunCamera()
 		//go r.Camera.Start()
 

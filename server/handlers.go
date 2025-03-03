@@ -141,16 +141,92 @@ func get_video(resp http.ResponseWriter, req *http.Request) {
 		for {
 
 			jpegBytes := bot.Camera.Buf
+			if jpegBytes != nil || len(jpegBytes) > 0 {
+				// Write the frame to the HTTP response
+				fmt.Fprintf(resp, "--frame\r\n")
+				fmt.Fprintf(resp, "Content-Type: image/jpeg\r\n")
+				fmt.Fprintf(resp, "Content-Length: %d\r\n\r\n", len(jpegBytes))
+				//bot.Camera.Stream.ServeHTTP(resp, req)
+				resp.Write(jpegBytes)
+				fmt.Fprintf(resp, "\r\n")
+			}
 
-			// Write the frame to the HTTP response
-			fmt.Fprintf(resp, "--frame\r\n")
-			fmt.Fprintf(resp, "Content-Type: image/jpeg\r\n")
-			fmt.Fprintf(resp, "Content-Length: %d\r\n\r\n", len(jpegBytes))
-			bot.Camera.Stream.ServeHTTP(resp, req)
-			//resp.Write(jpegBytes)
-			//fmt.Fprintf(resp, "\r\n")
 		}
 	}
+}
+
+func start_stream(resp http.ResponseWriter, req *http.Request) {
+
+	bot := req.Context().Value("bot").(*robot.Robot)
+
+	status := fmt.Sprintf("Camera is operational, running and the buffer is not empty, serving video ...")
+	if !bot.Camera.IsRunning {
+		log.Printf("Streraming camera feed ...")
+		//go bot.Camera.RunCamera()
+		go bot.Camera.Start()
+		status = "Streaming camera feed.."
+	}
+
+	thisRequest := map[string]interface{}{
+		"time":           time.Now().Unix(),
+		"client_address": req.RemoteAddr,
+		"resource":       req.URL.Path,
+		"user_agent":     req.Header["User-Agent"],
+		"client":         clientHash(req),
+	}
+	thisResponse := map[string]interface{}{
+		"status":        status,
+		"device_status": bot.Devices,
+		"camera_state": map[string]interface{}{
+			"operational": bot.Camera.IsOperational,
+			"running":     bot.Camera.IsRunning,
+			//"empty":       bot.Camera.ImgMat.Empty(),
+			"Detected": bot.Camera.DetectFaces,
+		},
+		"botname":      bot.Name,
+		"this_request": thisRequest,
+	}
+
+	respond(resp, thisResponse)
+
+}
+
+func stop_stream(resp http.ResponseWriter, req *http.Request) {
+
+	bot := req.Context().Value("bot").(*robot.Robot)
+
+	status := fmt.Sprintf("Camera is running and will be stopped")
+	if !bot.Camera.IsRunning {
+		status = fmt.Sprintf("Camera is not running, there's no stream to stop.")
+	}
+
+	if bot.Camera.IsRunning {
+		log.Printf("Stoping camera stream...")
+		bot.Camera.Stop()
+		status = "Camera stream stopped"
+	}
+
+	thisRequest := map[string]interface{}{
+		"time":           time.Now().Unix(),
+		"client_address": req.RemoteAddr,
+		"resource":       req.URL.Path,
+		"user_agent":     req.Header["User-Agent"],
+		"client":         clientHash(req),
+	}
+	thisResponse := map[string]interface{}{
+		"status":        status,
+		"device_status": bot.Devices,
+		"camera_state": map[string]interface{}{
+			"operational": bot.Camera.IsOperational,
+			"running":     bot.Camera.IsRunning,
+			"Detected":    bot.Camera.DetectFaces,
+		},
+		"botname":      bot.Name,
+		"this_request": thisRequest,
+	}
+
+	respond(resp, thisResponse)
+
 }
 
 func set_facedetect(resp http.ResponseWriter, req *http.Request) {

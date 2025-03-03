@@ -82,6 +82,8 @@ func Start(bot *robot.Robot, serverlog *log.Logger) error {
 	mux.HandleFunc("/api/v1/bot-stop", Chain(stop_bot, logger(serverlog), robotware(bot)))
 	mux.HandleFunc("/api/v1/detectfaces", Chain(set_facedetect, logger(serverlog), robotware(bot)))
 	mux.HandleFunc("/api/v1/video", Chain(get_video, logger(serverlog), robotware(bot)))
+	mux.HandleFunc("/api/v1/start/stream", Chain(start_stream, logger(serverlog), robotware(bot)))
+	mux.HandleFunc("/api/v1/stop/stream", Chain(stop_stream, logger(serverlog), robotware(bot)))
 	mux.HandleFunc("/api/v1/takepicture", Chain(take_picture, logger(serverlog), robotware(bot)))
 	//mux.Handle("/stream", bot.Camera.Stream)
 	err := http.ListenAndServe(":8080", mux)
