@@ -5,6 +5,11 @@ info:
   version: 1.0.0
 servers:
   - url: http://localhost:8080
+    description: Local Dev server
+  - url: https://gizmatron.local:8080
+    description: Raspberry pi Dev server
+  - url: https://gizmatron-test.local:8080
+    description: Raspberry pi Test server
 paths:
   /ping:
     get:
