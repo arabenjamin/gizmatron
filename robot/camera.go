@@ -67,7 +67,7 @@ func InitCam() (*Cam, error) {
 	defer c.ImgMat.Close()
 
 	c.StopStream = make(chan bool)
-	defer close(c.StopStream)
+	//defer close(c.StopStream)
 	log.Printf("Camera Ready ...")
 	return c, nil
 }
@@ -75,10 +75,9 @@ func InitCam() (*Cam, error) {
 func (c *Cam) Stop() {
 
 	log.Printf("Closing Camera ....")
-	/*go func() {
-		c.StopStream <- true
-		c.IsRunning = false
-	}()*/
+
+	c.StopStream <- true
+	c.IsRunning = false
 
 	if c.Webcam != nil {
 		c.Webcam.Close()
@@ -129,81 +128,71 @@ func (c *Cam) Start() {
 		log.Printf("Camera is operational, starting stream ...")
 		for {
 
-			if ok := c.Webcam.Read(&c.ImgMat); !ok {
-				var err error
-				err_msg := fmt.Sprintf("Error !! Cannot read from Camera Device: %v", ok)
-
-				err = fmt.Errorf(err_msg)
-				log.Printf(err.Error())
-				//c.Stop()
-				return
-			}
-
-			if c.ImgMat.Empty() {
-				log.Printf("Image Matrix is empty, moving forward ")
-			}
-
-			if !c.ImgMat.Empty() {
-				c.IsRunning = true
-				//c.mux.Lock()
-				if c.DetectFaces {
-					c.FaceDetect()
+			/*
+				if ok := c.Webcam.Read(&c.ImgMat); !ok {
+					log.Printf("Error !! Cannot read from Camera Device: %v", ok)
 				}
 
-				buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
-				defer buf.Close()
-				c.Buf = buf.GetBytes()
-				//c.Stream.UpdateJPEG(c.Buf)
-				//	//c.mux.Unlock()
+				if c.ImgMat.Empty() {
+					log.Printf("Image Matrix is empty, moving forward ")
+				}
 
-				// Sleep for a short duration to control the frame rate
-				time.Sleep(33 * time.Millisecond) // ~30 FPS
-			}
-
-			/*
-				select {
-				case <-c.StopStream:
-					log.Printf("Recieved Stop signal, Stopping Camera Stream..")
-					//c.Stop()
-					return
-
-				default:
-
-					if ok := c.Webcam.Read(&c.ImgMat); !ok {
-
-						log.Printf("Error !! Cannot read from Camera Device: %v", ok)
-						c.Stop()
-						return
+				if !c.ImgMat.Empty() {
+					c.IsRunning = true
+					//c.mux.Lock()
+					if c.DetectFaces {
+						c.FaceDetect()
 					}
 
-					if c.ImgMat.Empty() {
-						log.Printf("Image Matrix is empty, moving forward ")
-					}
+					buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+					defer buf.Close()
+					c.Buf = buf.GetBytes()
+					//c.Stream.UpdateJPEG(c.Buf)
+					//	//c.mux.Unlock()
 
-					if !c.ImgMat.Empty() {
-						c.IsRunning = true
-						//c.mux.Lock()
-						if c.DetectFaces {
-							c.FaceDetect()
-						}
-
-						buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
-						defer buf.Close()
-						c.Buf = buf.GetBytes()
-						//c.Stream.UpdateJPEG(c.Buf)
-						//	//c.mux.Unlock()
-
-						// Sleep for a short duration to control the frame rate
-						time.Sleep(33 * time.Millisecond) // ~30 FPS
-					}
-					//c.run()
+					// Sleep for a short duration to control the frame rate
+					time.Sleep(33 * time.Millisecond) // ~30 FPS
 				}
 			*/
 
-			//c.run()
+			select {
+			case <-c.StopStream:
+				log.Printf("Recieved Stop signal, Stopping Camera Stream..")
+				return
+
+			default:
+
+				if ok := c.Webcam.Read(&c.ImgMat); !ok {
+
+					log.Printf("Error !! Cannot read from Camera Device: %v", ok)
+				}
+
+				if c.ImgMat.Empty() {
+					log.Printf("Image Matrix is empty, moving forward ")
+				}
+
+				if !c.ImgMat.Empty() {
+					c.IsRunning = true
+					//c.mux.Lock()
+					if c.DetectFaces {
+						c.FaceDetect()
+					}
+
+					buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+					defer buf.Close()
+					c.Buf = buf.GetBytes()
+					//c.Stream.UpdateJPEG(c.Buf)
+					//	//c.mux.Unlock()
+
+					// Sleep for a short duration to control the frame rate
+					time.Sleep(33 * time.Millisecond) // ~30 FPS
+				}
+			}
 		}
 	}
-
+	c.IsOperational = false
+	c.IsRunning = false
+	return
 }
 
 func (c *Cam) FaceDetect() {
@@ -397,38 +386,4 @@ func (c *Cam) RunCamInWindow() {
 
 		}
 	}
-}
-
-func (c *Cam) run() {
-
-	// TODO: Add Camera current running time to keep track of how long the camera has been running
-
-	if ok := c.Webcam.Read(&c.ImgMat); !ok {
-
-		log.Printf("Error !! Cannot read from Camera Device: %v", ok)
-		c.Stop()
-		return
-	}
-
-	if c.ImgMat.Empty() {
-		log.Printf("Image Matrix is empty, moving forward ")
-	}
-
-	if !c.ImgMat.Empty() {
-		c.IsRunning = true
-		//c.mux.Lock()
-		if c.DetectFaces {
-			c.FaceDetect()
-		}
-
-		buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
-		defer buf.Close()
-		c.Buf = buf.GetBytes()
-		//c.Stream.UpdateJPEG(c.Buf)
-		//	//c.mux.Unlock()
-
-		// Sleep for a short duration to control the frame rate
-		time.Sleep(33 * time.Millisecond) // ~30 FPS
-	}
-
 }

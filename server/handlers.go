@@ -197,10 +197,9 @@ func stop_stream(resp http.ResponseWriter, req *http.Request) {
 		status = fmt.Sprintf("Camera is not running, there's no stream to stop.")
 	}
 
-	if bot.Camera.IsRunning {
+	if bot.Camera.IsOperational && bot.Camera.IsRunning {
 		log.Printf("Stoping camera stream...")
-		bot.Camera.StopStream <- true
-		//bot.Camera.Stop()
+		bot.Camera.Stop()
 		status = "Camera stream stopped"
 	}
 
