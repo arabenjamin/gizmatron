@@ -41,28 +41,9 @@ func InitCam() (*Cam, error) {
 	log.Printf("CAMERA: Initializing Camera ...")
 	c := &Cam{
 		DetectFaces:   false,
-		IsOperational: true,
+		IsOperational: false,
+		IsRunning:     false,
 	}
-
-	/*
-		log.Printf("Setting up Webcam ...")
-		c.Webcam, c.err = gocv.OpenVideoCapture(-1)
-		if c.err != nil {
-			log.Printf("Failed to open webcam.")
-			c.IsOperational = false
-			return c, c.err
-		}
-		defer c.Webcam.Close()
-		log.Printf("Webcam open and available ..")
-		// prepare image matrix
-		c.ImgMat = gocv.NewMat()
-		defer c.ImgMat.Close()
-
-		// create the mjpeg stream
-		c.Stream = mjpeg.NewStream()
-
-		//c.StopStream = make(chan bool)
-	*/
 
 	/*
 		if c.IsOperational {
@@ -80,7 +61,13 @@ func InitCam() (*Cam, error) {
 			}
 		}
 	*/
+
+	/* Image matrix */
+	c.ImgMat = gocv.NewMat()
+	defer c.ImgMat.Close()
+
 	c.StopStream = make(chan bool)
+	defer close(c.StopStream)
 	log.Printf("Camera Ready ...")
 	return c, nil
 }
@@ -88,9 +75,16 @@ func InitCam() (*Cam, error) {
 func (c *Cam) Stop() {
 
 	log.Printf("Closing Camera ....")
-	c.StopStream <- true
-	c.IsRunning = false
-	c.Webcam.Close()
+	/*go func() {
+		c.StopStream <- true
+		c.IsRunning = false
+	}()*/
+
+	if c.Webcam != nil {
+		c.Webcam.Close()
+		c.Webcam = nil
+		c.IsOperational = false
+	}
 	log.Printf("Camera Closed")
 
 }
@@ -111,13 +105,16 @@ func (c *Cam) Start() {
 	//c.IsRunning = true
 	// Just double check that the camera is operational
 	if c.Webcam == nil || c.IsOperational == false {
+		log.Println("Camera is not operational, trying to open camera ...")
 		var err error
 		c.Webcam, err = gocv.OpenVideoCapture(-1)
 		if err != nil {
-			fmt.Println("Error opeing webcam\n")
+			log.Printf("Error opeing webcam\nERROR: %v", err)
+			c.IsOperational = false
 			return
 		}
 		c.IsOperational = true
+		log.Println("Camera is operational")
 	}
 	defer c.Webcam.Close()
 
@@ -126,17 +123,19 @@ func (c *Cam) Start() {
 	defer c.ImgMat.Close()
 
 	// create the mjpeg stream
-	c.Stream = mjpeg.NewStream()
-
-	if c.IsOperational {
+	//c.Stream = mjpeg.NewStream()
+	if c.IsOperational && c.Webcam != nil {
 
 		log.Printf("Camera is operational, starting stream ...")
 		for {
 
 			if ok := c.Webcam.Read(&c.ImgMat); !ok {
+				var err error
+				err_msg := fmt.Sprintf("Error !! Cannot read from Camera Device: %v", ok)
 
-				log.Printf("Camera Error !! Cannot read from Camera Device: %v", ok)
-				c.Stop()
+				err = fmt.Errorf(err_msg)
+				log.Printf(err.Error())
+				//c.Stop()
 				return
 			}
 
@@ -153,10 +152,10 @@ func (c *Cam) Start() {
 
 				buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
 				defer buf.Close()
-
 				c.Buf = buf.GetBytes()
-				c.Stream.UpdateJPEG(c.Buf)
+				//c.Stream.UpdateJPEG(c.Buf)
 				//	//c.mux.Unlock()
+
 				// Sleep for a short duration to control the frame rate
 				time.Sleep(33 * time.Millisecond) // ~30 FPS
 			}
@@ -164,14 +163,43 @@ func (c *Cam) Start() {
 			/*
 				select {
 				case <-c.StopStream:
-					log.Printf("Stopping Camera Stream..")
-					c.Stop()
+					log.Printf("Recieved Stop signal, Stopping Camera Stream..")
+					//c.Stop()
 					return
 
 				default:
-					c.run()
+
+					if ok := c.Webcam.Read(&c.ImgMat); !ok {
+
+						log.Printf("Error !! Cannot read from Camera Device: %v", ok)
+						c.Stop()
+						return
+					}
+
+					if c.ImgMat.Empty() {
+						log.Printf("Image Matrix is empty, moving forward ")
+					}
+
+					if !c.ImgMat.Empty() {
+						c.IsRunning = true
+						//c.mux.Lock()
+						if c.DetectFaces {
+							c.FaceDetect()
+						}
+
+						buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+						defer buf.Close()
+						c.Buf = buf.GetBytes()
+						//c.Stream.UpdateJPEG(c.Buf)
+						//	//c.mux.Unlock()
+
+						// Sleep for a short duration to control the frame rate
+						time.Sleep(33 * time.Millisecond) // ~30 FPS
+					}
+					//c.run()
 				}
 			*/
+
 			//c.run()
 		}
 	}
@@ -374,35 +402,33 @@ func (c *Cam) RunCamInWindow() {
 func (c *Cam) run() {
 
 	// TODO: Add Camera current running time to keep track of how long the camera has been running
-	if !c.ImgMat.Closed() {
 
-		if ok := c.Webcam.Read(&c.ImgMat); !ok {
+	if ok := c.Webcam.Read(&c.ImgMat); !ok {
 
-			log.Printf("Error !! Cannot read from Camera Device: %v", ok)
-			c.Stop()
-			return
+		log.Printf("Error !! Cannot read from Camera Device: %v", ok)
+		c.Stop()
+		return
+	}
+
+	if c.ImgMat.Empty() {
+		log.Printf("Image Matrix is empty, moving forward ")
+	}
+
+	if !c.ImgMat.Empty() {
+		c.IsRunning = true
+		//c.mux.Lock()
+		if c.DetectFaces {
+			c.FaceDetect()
 		}
 
-		if c.ImgMat.Empty() {
-			log.Printf("Image Matrix is empty, moving forward ")
-		}
+		buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+		defer buf.Close()
+		c.Buf = buf.GetBytes()
+		//c.Stream.UpdateJPEG(c.Buf)
+		//	//c.mux.Unlock()
 
-		if !c.ImgMat.Empty() {
-			c.IsRunning = true
-			//c.mux.Lock()
-			if c.DetectFaces {
-				c.FaceDetect()
-			}
-
-			buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
-			defer buf.Close()
-			c.Buf = buf.GetBytes()
-			c.Stream.UpdateJPEG(c.Buf)
-			//	//c.mux.Unlock()
-
-			// Sleep for a short duration to control the frame rate
-			time.Sleep(33 * time.Millisecond) // ~30 FPS
-		}
+		// Sleep for a short duration to control the frame rate
+		time.Sleep(33 * time.Millisecond) // ~30 FPS
 	}
 
 }

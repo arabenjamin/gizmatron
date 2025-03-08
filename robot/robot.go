@@ -122,9 +122,8 @@ func (r *Robot) initDevices() error {
 	var camerr error
 	r.Camera, camerr = InitCam()
 	if camerr != nil {
-		errMsg := fmt.Sprintf("Warning !! Failed to intialize camera: %v", camerr)
-		log.Print(errMsg)
 		r.Devices["CameraError"] = camerr
+		r.Devices["Camera"] = "Not Operational"
 	}
 	//defer r.Camera.Stop()
 

@@ -59,8 +59,7 @@ func get_status(resp http.ResponseWriter, req *http.Request) {
 		"camera_state": map[string]interface{}{
 			"operational": bot.Camera.IsOperational,
 			"running":     bot.Camera.IsRunning,
-			//"empty":       bot.Camera.ImgMat.Empty(),
-			"Detected": bot.Camera.DetectFaces,
+			"Detected":    bot.Camera.DetectFaces,
 		},
 		"device_status": bot.Devices,
 		"botname":       bot.Name,
@@ -121,7 +120,6 @@ func get_video(resp http.ResponseWriter, req *http.Request) {
 			"camera_state": map[string]interface{}{
 				"operational": bot.Camera.IsOperational,
 				"running":     bot.Camera.IsRunning,
-				"empty":       bot.Camera.ImgMat.Empty(),
 				"Detected":    bot.Camera.DetectFaces,
 			},
 			"device_status": bot.Devices,
@@ -135,19 +133,19 @@ func get_video(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	/* Log camera state */
-	if bot.Camera.IsOperational && bot.Camera.IsRunning && !bot.Camera.ImgMat.Empty() {
-		log.Print("Camera is operational, running and the buffer is not empty, serving video ...")
+	if bot.Camera.IsOperational && bot.Camera.IsRunning {
+		log.Print("Camera is operational, running and the buffer is not empty, streaming video feed ...")
 		// return bot.Camera.Stream
 		for {
 
-			jpegBytes := bot.Camera.Buf
-			if jpegBytes != nil || len(jpegBytes) > 0 {
+			//jpegBytes := bot.Camera.Buf
+			if bot.Camera.Buf != nil || len(bot.Camera.Buf) > 0 {
 				// Write the frame to the HTTP response
 				fmt.Fprintf(resp, "--frame\r\n")
 				fmt.Fprintf(resp, "Content-Type: image/jpeg\r\n")
-				fmt.Fprintf(resp, "Content-Length: %d\r\n\r\n", len(jpegBytes))
+				fmt.Fprintf(resp, "Content-Length: %d\r\n\r\n", len(bot.Camera.Buf))
 				//bot.Camera.Stream.ServeHTTP(resp, req)
-				resp.Write(jpegBytes)
+				resp.Write(bot.Camera.Buf)
 				fmt.Fprintf(resp, "\r\n")
 			}
 
@@ -161,10 +159,10 @@ func start_stream(resp http.ResponseWriter, req *http.Request) {
 
 	status := fmt.Sprintf("Camera is operational, running and the buffer is not empty, serving video ...")
 	if !bot.Camera.IsRunning {
-		log.Printf("Streraming camera feed ...")
+		log.Printf("Requesting camera feed ...")
 		//go bot.Camera.RunCamera()
 		go bot.Camera.Start()
-		status = "Streaming camera feed.."
+		status = "Requesting camera feed.."
 	}
 
 	thisRequest := map[string]interface{}{
@@ -180,8 +178,7 @@ func start_stream(resp http.ResponseWriter, req *http.Request) {
 		"camera_state": map[string]interface{}{
 			"operational": bot.Camera.IsOperational,
 			"running":     bot.Camera.IsRunning,
-			//"empty":       bot.Camera.ImgMat.Empty(),
-			"Detected": bot.Camera.DetectFaces,
+			"Detected":    bot.Camera.DetectFaces,
 		},
 		"botname":      bot.Name,
 		"this_request": thisRequest,
@@ -202,7 +199,8 @@ func stop_stream(resp http.ResponseWriter, req *http.Request) {
 
 	if bot.Camera.IsRunning {
 		log.Printf("Stoping camera stream...")
-		bot.Camera.Stop()
+		bot.Camera.StopStream <- true
+		//bot.Camera.Stop()
 		status = "Camera stream stopped"
 	}
 

@@ -25,7 +25,8 @@ RUN git clone https://github.com/arabenjamin/gizmatron.git
 WORKDIR gizmatron/
 
 #RUN go build -tags customenv
-RUN go build
+RUN go mod tidy
+RUN go build . --no-cache
 
 CMD ["./gizmatron"]
 
