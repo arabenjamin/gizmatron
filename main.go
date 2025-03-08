@@ -31,20 +31,6 @@ func main() {
 	/*  Seems like we have a bot to work with */
 	log.Printf("Robot: %v initialized", bot.Name)
 
-	//Setup Server LED ( Blue LED on pin ...)
-	bot.Devices["serverLed"] = "Operational"
-	serverled, serverErr := robot.NewLedLine(13, "Sever Led")
-	if serverErr != nil {
-		bot.Devices["severledError"] = serverErr
-		bot.Devices["serverLed"] = "Not Operational"
-	}
-	bot.Serverled = serverled
-	// Turn the server led on now
-	// I may want to rethink the way the server light comes on.
-	if bot.Devices["severLed"] == "Operational" {
-		bot.Serverled.SetValue(1)
-	}
-
 	/* Strart the server */
 	serverlog.Println("SERVER: Starting Gizmatron api server...")
 	err := server.Start(bot, serverlog)

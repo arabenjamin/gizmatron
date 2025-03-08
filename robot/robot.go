@@ -19,13 +19,11 @@ const (
 	JOINT_4_SERVO = 4
 )
 
-/*
-type Device Driver
-*/
-
-type device interface {
-	Start()
-	Stop()
+type Device struct {
+	Name   string
+	Status string
+	Data   map[string]interface{}
+	Error  string
 }
 
 type Robot struct {
@@ -38,7 +36,7 @@ type Robot struct {
 	armled     *gpiocdev.Line
 	arm        *Arm
 	Camera     *Cam
-	Devices    map[string]interface{}
+	Devices    map[string]*Device
 	log        *log.Logger
 }
 
@@ -48,7 +46,7 @@ func InitRobot(botlog *log.Logger) (*Robot, error) {
 	robot := &Robot{
 		Name:    "Gizmatron",
 		adaptor: raspi.NewAdaptor(),
-		Devices: make(map[string]interface{}),
+		Devices: make(map[string]*Device),
 		log:     botlog,
 	}
 
@@ -69,7 +67,7 @@ func InitRobot(botlog *log.Logger) (*Robot, error) {
 	// NOTE: IF we dont make this check and try to change the value of a non-existent pin ...
 	// really narly shit happens.
 	// Rember to mind you P's and Q's
-	if robot.Devices["runningLed"] == "Operational" {
+	if robot.Devices["runningLed"].Status == "Operational" {
 		// Turn on our operating light
 		robot.runningled.SetValue(1)
 	}
@@ -86,49 +84,69 @@ func (r *Robot) initDevices() error {
 	// an empty list should mean that all the devices are runnning and operational
 
 	/* Setup our running LED*/
-	r.Devices["runningLed"] = "Operational"
+	//r.Devices["runningLed"] = "Operational"
+	r.Devices["runningLed"] = &Device{
+		Name:   "runningLed",
+		Status: "Operational",
+	}
 	runningled, runLedErr := NewLedLine(RUNNING_LED, "Running LED")
 	if runLedErr != nil {
-		r.Devices["runningLedError"] = runLedErr
-		r.Devices["runningLed"] = "Not Operational"
+		r.Devices["runningLed"].Status = "Not Operational"
+		r.Devices["runningLed"].Error = runLedErr.Error()
 		// TODO: set device error list
 	}
-
 	r.runningled = runningled
 
 	/* Setup Arm */
+	r.Devices["Arm"] = &Device{
+		Name:   "ArmGadget",
+		Status: "Operational",
+	}
 	arm, err := InitArm(r.adaptor)
 	if err != nil {
 		errmsg := fmt.Sprintf("Warning!! Failed to initialize arm!: %v", err)
 		r.log.Print(errmsg)
-		// TODO Set the arm error in the device status
-		r.Devices["armError"] = errmsg
+		r.Devices["Arm"].Status = "Not Operational"
+		r.Devices["Arm"].Error = errmsg
 	}
 	r.arm = arm
 
 	if arm.IsRunning {
+		r.Devices["ArmLed"] = &Device{
+			Name:   "ArmLed",
+			Status: "Operational",
+		}
 
 		armled, armLedErr := NewLedLine(ARM_LED, "Arm LED")
 		if armLedErr != nil {
 			errMsg := fmt.Sprintf("Warning!! Arm LED Failed: %v", armLedErr)
 			r.log.Print(errMsg)
-			r.Devices["ArmLedError"] = armLedErr
+			r.Devices["ArmLed"].Status = "Not Operational"
+			r.Devices["ArmLed"].Error = armLedErr.Error()
 		}
-		r.Devices["ArmLed"] = "Operational"
 		r.armled = armled
 	}
 
 	/* Set up pur camera */
+	r.Devices["Camera"] = &Device{
+		Name:   "Camera",
+		Status: "Operational",
+	}
 	var camerr error
 	r.Camera, camerr = InitCam()
 	if camerr != nil {
-		r.Devices["CameraError"] = camerr
-		r.Devices["Camera"] = "Not Operational"
+		r.Devices["Camera"].Status = "Not Operational"
+		r.Devices["Camera"].Error = camerr.Error()
+		r.log.Printf("Error: Failed to initialize Camera: %v", camerr)
 	}
 	//defer r.Camera.Stop()
+	r.Devices["Camera"].Data = map[string]interface{}{
+		"Detecting":   r.Camera.DetectFaces,
+		"Running":     r.Camera.IsRunning,
+		"Operational": r.Camera.IsOperational,
+	}
 
 	if r.Camera.IsOperational {
-		r.Devices["Camera"] = "Operational"
 		//go r.Camera.RunCamera()
 		//go r.Camera.Start()
 
@@ -147,7 +165,7 @@ func (r *Robot) Start() (bool, error) {
 		if ok := r.arm.Start(); ok != nil {
 			errMsg := fmt.Sprintf("Error Failed to move arm to starting position :%v", ok)
 			log.Print(errMsg)
-			r.Devices["ArmError"] = errMsg
+			r.Devices["ArmLed"].Error = errMsg
 		}
 
 	}
@@ -173,11 +191,11 @@ func (r *Robot) Stop() (bool, error) {
 		if ok := r.arm.Stop(); ok != nil {
 			errMsg := fmt.Sprintf("Error Faild to return arm to default positon:%v", ok)
 			log.Print(errMsg)
-			r.Devices["ArmError"] = errMsg
+			r.Devices["ArmLed"].Error = errMsg
 		}
 	}
 
-	if r.Camera.IsOperational && r.Camera.IsRunning && !r.Camera.ImgMat.Empty() {
+	if r.Camera.IsOperational && r.Camera.IsRunning {
 		r.Camera.Stop()
 	}
 

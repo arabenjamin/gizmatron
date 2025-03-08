@@ -55,12 +55,7 @@ func get_status(resp http.ResponseWriter, req *http.Request) {
 	}
 
 	thisResponse := map[string]interface{}{
-		"status": status,
-		"camera_state": map[string]interface{}{
-			"operational": bot.Camera.IsOperational,
-			"running":     bot.Camera.IsRunning,
-			"Detected":    bot.Camera.DetectFaces,
-		},
+		"status":        status,
 		"device_status": bot.Devices,
 		"botname":       bot.Name,
 		"this_request":  thisRequest,
@@ -116,12 +111,7 @@ func get_video(resp http.ResponseWriter, req *http.Request) {
 		}
 
 		thisResponse := map[string]interface{}{
-			"status": status,
-			"camera_state": map[string]interface{}{
-				"operational": bot.Camera.IsOperational,
-				"running":     bot.Camera.IsRunning,
-				"Detected":    bot.Camera.DetectFaces,
-			},
+			"status":        status,
 			"device_status": bot.Devices,
 			"botname":       bot.Name,
 			"this_request":  thisRequest,
@@ -175,13 +165,8 @@ func start_stream(resp http.ResponseWriter, req *http.Request) {
 	thisResponse := map[string]interface{}{
 		"status":        status,
 		"device_status": bot.Devices,
-		"camera_state": map[string]interface{}{
-			"operational": bot.Camera.IsOperational,
-			"running":     bot.Camera.IsRunning,
-			"Detected":    bot.Camera.DetectFaces,
-		},
-		"botname":      bot.Name,
-		"this_request": thisRequest,
+		"botname":       bot.Name,
+		"this_request":  thisRequest,
 	}
 
 	respond(resp, thisResponse)
@@ -213,13 +198,8 @@ func stop_stream(resp http.ResponseWriter, req *http.Request) {
 	thisResponse := map[string]interface{}{
 		"status":        status,
 		"device_status": bot.Devices,
-		"camera_state": map[string]interface{}{
-			"operational": bot.Camera.IsOperational,
-			"running":     bot.Camera.IsRunning,
-			"Detected":    bot.Camera.DetectFaces,
-		},
-		"botname":      bot.Name,
-		"this_request": thisRequest,
+		"botname":       bot.Name,
+		"this_request":  thisRequest,
 	}
 
 	respond(resp, thisResponse)
@@ -261,14 +241,8 @@ func set_facedetect(resp http.ResponseWriter, req *http.Request) {
 	thisResponse := map[string]interface{}{
 		"status":        status,
 		"device_status": bot.Devices,
-		"camera_state": map[string]interface{}{
-			"operational": bot.Camera.IsOperational,
-			"running":     bot.Camera.IsRunning,
-			"empty":       bot.Camera.ImgMat.Empty(),
-			"Detected":    bot.Camera.DetectFaces,
-		},
-		"botname":      bot.Name,
-		"this_request": thisRequest,
+		"botname":       bot.Name,
+		"this_request":  thisRequest,
 	}
 
 	//logReq(req)

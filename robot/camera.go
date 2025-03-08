@@ -28,22 +28,16 @@ type Cam struct {
 	StopStream chan bool
 }
 
-// CustomBufferReader reads from a byte buffer
-type CustomBufferReader struct {
-	buf *bytes.Buffer
-}
-
-func (cbr *CustomBufferReader) Read(p []byte) (n int, err error) {
-	return cbr.buf.Read(p)
-}
-
 func InitCam() (*Cam, error) {
+
 	log.Printf("CAMERA: Initializing Camera ...")
 	c := &Cam{
 		DetectFaces:   false,
 		IsOperational: false,
 		IsRunning:     false,
 	}
+
+	c.open_wecam()
 
 	/*
 		if c.IsOperational {
@@ -82,8 +76,8 @@ func (c *Cam) Stop() {
 	if c.Webcam != nil {
 		c.Webcam.Close()
 		c.Webcam = nil
-		c.IsOperational = false
 	}
+	c.IsOperational = false
 	log.Printf("Camera Closed")
 
 }
@@ -101,20 +95,7 @@ func (c *Cam) Restart() {
 func (c *Cam) Start() {
 
 	log.Printf("Starting Camera stream ...")
-	//c.IsRunning = true
-	// Just double check that the camera is operational
-	if c.Webcam == nil || c.IsOperational == false {
-		log.Println("Camera is not operational, trying to open camera ...")
-		var err error
-		c.Webcam, err = gocv.OpenVideoCapture(-1)
-		if err != nil {
-			log.Printf("Error opeing webcam\nERROR: %v", err)
-			c.IsOperational = false
-			return
-		}
-		c.IsOperational = true
-		log.Println("Camera is operational")
-	}
+	c.open_wecam()
 	defer c.Webcam.Close()
 
 	// prepare image matrix
@@ -127,34 +108,6 @@ func (c *Cam) Start() {
 
 		log.Printf("Camera is operational, starting stream ...")
 		for {
-
-			/*
-				if ok := c.Webcam.Read(&c.ImgMat); !ok {
-					log.Printf("Error !! Cannot read from Camera Device: %v", ok)
-				}
-
-				if c.ImgMat.Empty() {
-					log.Printf("Image Matrix is empty, moving forward ")
-				}
-
-				if !c.ImgMat.Empty() {
-					c.IsRunning = true
-					//c.mux.Lock()
-					if c.DetectFaces {
-						c.FaceDetect()
-					}
-
-					buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
-					defer buf.Close()
-					c.Buf = buf.GetBytes()
-					//c.Stream.UpdateJPEG(c.Buf)
-					//	//c.mux.Unlock()
-
-					// Sleep for a short duration to control the frame rate
-					time.Sleep(33 * time.Millisecond) // ~30 FPS
-				}
-			*/
-
 			select {
 			case <-c.StopStream:
 				log.Printf("Recieved Stop signal, Stopping Camera Stream..")
@@ -190,9 +143,6 @@ func (c *Cam) Start() {
 			}
 		}
 	}
-	c.IsOperational = false
-	c.IsRunning = false
-	return
 }
 
 func (c *Cam) FaceDetect() {
@@ -385,5 +335,20 @@ func (c *Cam) RunCamInWindow() {
 			}
 
 		}
+	}
+}
+
+func (c *Cam) open_wecam() {
+	if c.Webcam == nil || c.IsOperational == false {
+		log.Println("Camera is not operational, trying to open camera ...")
+		var err error
+		c.Webcam, err = gocv.OpenVideoCapture(-1)
+		if err != nil {
+			log.Printf("Error opeing webcam\nERROR: %v", err)
+			c.IsOperational = false
+			return
+		}
+		c.IsOperational = true
+		log.Println("Camera is operational")
 	}
 }

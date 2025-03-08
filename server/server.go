@@ -74,6 +74,25 @@ func Chain(f http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 
 func Start(bot *robot.Robot, serverlog *log.Logger) error {
 
+	//Setup Server LED ( Blue LED on pin ...)
+	/*
+		bot.Devices["serverLed"] = &robot.Device{
+			Name:   "Server Led",
+			Status: "Operational",
+		}
+		serverled, serverErr := robot.NewLedLine(13, "Server Led")
+		if serverErr != nil {
+			bot.Devices["serverLed"].Error = serverErr.Error()
+			bot.Devices["serverLed"].Status = "Not Operational"
+		}
+		bot.Serverled = serverled
+		// Turn the server led on now
+		// I may want to rethink the way the server light comes on.
+		if bot.Devices["severLed"].Status == "Operational" {
+			bot.Serverled.SetValue(1)
+		}
+	*/
+
 	/* Register our routes middlewares and handlers */
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ping", Chain(ping, logger(serverlog)))
@@ -86,6 +105,7 @@ func Start(bot *robot.Robot, serverlog *log.Logger) error {
 	mux.HandleFunc("/api/v1/stop/stream", Chain(stop_stream, logger(serverlog), robotware(bot)))
 	mux.HandleFunc("/api/v1/takepicture", Chain(take_picture, logger(serverlog), robotware(bot)))
 	//mux.Handle("/stream", bot.Camera.Stream)
+
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
 		return err
