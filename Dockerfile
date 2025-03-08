@@ -26,7 +26,7 @@ WORKDIR gizmatron/
 
 #RUN go build -tags customenv
 RUN go mod tidy
-RUN go build --no-cache . 
+RUN go build -a . 
 
 CMD ["./gizmatron"]
 
