@@ -135,8 +135,10 @@ func (c *Cam) Start() {
 
 					// resize the image to 320x240
 					gocv.Resize(c.ImgMat, &c.ImgMat, image.Point{600, 600}, 0, 0, gocv.InterpolationDefault)
-
-					buf, _ := gocv.IMEncode(".png", c.ImgMat)
+					buf, img_err := gocv.IMEncode(".jpg", c.ImgMat)
+					if img_err != nil {
+						log.Printf("Error encoding image: %v", img_err)
+					}
 					defer buf.Close()
 					c.Buf = buf.GetBytes()
 					//c.Stream.UpdateJPEG(c.Buf)
