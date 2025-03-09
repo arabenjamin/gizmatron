@@ -3,6 +3,7 @@ package robot
 import (
 	"bytes"
 	"fmt"
+	"image"
 	"image/color"
 	"log"
 	"mime/multipart"
@@ -127,9 +128,13 @@ func (c *Cam) Start() {
 				if !c.ImgMat.Empty() {
 					c.IsRunning = true
 					//c.mux.Lock()
+
 					if c.DetectFaces {
 						c.FaceDetect()
 					}
+
+					// resize the image to 320x240
+					gocv.Resize(c.ImgMat, &c.ImgMat, image.Point{320, 240}, 0, 0, gocv.InterpolationDefault)
 
 					buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
 					defer buf.Close()
