@@ -134,9 +134,9 @@ func (c *Cam) Start() {
 					}
 
 					// resize the image to 320x240
-					gocv.Resize(c.ImgMat, &c.ImgMat, image.Point{320, 240}, 0, 0, gocv.InterpolationDefault)
+					gocv.Resize(c.ImgMat, &c.ImgMat, image.Point{600, 600}, 0, 0, gocv.InterpolationDefault)
 
-					buf, _ := gocv.IMEncode(".jpg", c.ImgMat)
+					buf, _ := gocv.IMEncode(".png", c.ImgMat)
 					defer buf.Close()
 					c.Buf = buf.GetBytes()
 					//c.Stream.UpdateJPEG(c.Buf)
