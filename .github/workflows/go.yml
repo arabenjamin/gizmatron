@@ -31,8 +31,11 @@ jobs:
       - name: Stop any running containers
         run: ids=$(sudo docker ps -a -q) | for id in $ids; do sudo docker stop $id && sudo docker rm &id; done
 
+      - name: List all containers
+        run: sudo docker ps -a 
+
       - name: Remove any remaining containers 
-        run: sudo docker container prune
+        run: sudo docker container rm $(sudo docker container ls -aq)
 
       - name: Remove old docker images
         run: sudo docker image prune
