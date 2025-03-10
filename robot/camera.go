@@ -115,6 +115,8 @@ func (c *Cam) Start() {
 				return
 
 			default:
+
+				log.Println("Reading from Camera")
 				c.Webcam.Set(gocv.VideoCaptureFrameWidth, 600)
 				c.Webcam.Set(gocv.VideoCaptureFrameHeight, 600)
 
