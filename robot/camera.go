@@ -136,6 +136,7 @@ func (c *Cam) Start() {
 					}
 
 					// resize the image to 320x240
+					log.Println("Resizing image")
 					gocv.Resize(c.ImgMat, &c.ImgMat, image.Point{600, 600}, 0, 0, gocv.InterpolationDefault)
 					//buf, img_err := gocv.IMEncode(".jpg", c.ImgMat)
 					c.ImgMat.ConvertTo(&c.ImgMat, gocv.MatTypeCV8UC3)
