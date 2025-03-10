@@ -115,6 +115,8 @@ func (c *Cam) Start() {
 				return
 
 			default:
+				c.Webcam.Set(gocv.VideoCaptureFrameWidth, 600)
+				c.Webcam.Set(gocv.VideoCaptureFrameHeight, 600)
 
 				if ok := c.Webcam.Read(&c.ImgMat); !ok {
 
@@ -135,8 +137,8 @@ func (c *Cam) Start() {
 
 					// resize the image to 320x240
 					gocv.Resize(c.ImgMat, &c.ImgMat, image.Point{600, 600}, 0, 0, gocv.InterpolationDefault)
-					buf, img_err := gocv.IMEncode(".jpg", c.ImgMat)
-					//buf, img_err := gocv.IMEncodeWithParams(".jpg", c.ImgMat, []int{gocv.IMWriteJpegQuality, 95})
+					//buf, img_err := gocv.IMEncode(".jpg", c.ImgMat)
+					buf, img_err := gocv.IMEncodeWithParams(".jpg", c.ImgMat, []int{gocv.IMWriteJpegQuality, 95})
 					if img_err != nil {
 						log.Printf("Error encoding image: %v", img_err)
 					}
