@@ -137,12 +137,12 @@ func (c *Cam) Start() {
 						c.FaceDetect()
 					}
 
-					// resize the image to 320x240
+					// resize the image to to make sure it fits into the stream
 					log.Println("Resizing image")
 					gocv.Resize(c.ImgMat, &c.ImgMat, image.Point{600, 600}, 0, 0, gocv.InterpolationDefault)
 					//buf, img_err := gocv.IMEncode(".jpg", c.ImgMat)
-					c.ImgMat.ConvertTo(&c.ImgMat, gocv.MatTypeCV8UC3)
-					buf, img_err := gocv.IMEncodeWithParams(".png", c.ImgMat, []int{gocv.IMWriteJpegQuality, 95})
+					//c.ImgMat.ConvertTo(&c.ImgMat, gocv.MatTypeCV8UC3)
+					buf, img_err := gocv.IMEncodeWithParams(".jpg", c.ImgMat, []int{gocv.IMWriteJpegQuality, 95})
 					if img_err != nil {
 						log.Printf("Error encoding image: %v", img_err)
 					}
