@@ -28,6 +28,11 @@ WORKDIR gizmatron/
 RUN go mod tidy
 RUN go build -a . 
 
+RUN groupadd i2c
+RUN useradd -ms /bin/bash ara 
+RUN usermod -aG i2c,dialout ara
+USER ara
+
 CMD ["./gizmatron"]
 
 EXPOSE 8080

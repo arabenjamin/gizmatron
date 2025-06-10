@@ -1,0 +1,26 @@
+services:
+  gizmatron:
+    #image: gizmatron:latest
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: gizmatron:latest
+    container_name: gizmatron
+    ports:
+      - "8080:8080"
+    volumes:
+      - "/dev/video0:/dev/video0"
+      - "/dev/gpiomem:/dev/gpiomem"
+    devices:
+      - "/dev/i2c-1:/dev/i2c-1"    
+    privileged: true
+    restart: unless-stopped
+    # sudo docker run -d --privileged --device /dev/i2c-1 --device /dev/video0:/dev/video0 -p 8080:8080 gizmatron:latest
+
+  # https://www.twingate.com/docs/deploy-connector-with-docker-compose
+  twingate-connector:
+    image: twingate/connector:latest
+    environment:
+      - TWINGATE_NETWORK=<TENANT NAME>
+      - TWINGATE_ACCESS_TOKEN=<ACCESS TOKEN>
+      - TWINGATE_REFRESH_TOKEN=<REFRESH TOKEN>

@@ -44,4 +44,5 @@ jobs:
         run: sudo docker build --no-cache -t gizmatron:latest . 
 
       - name: Run docker container
-        run: sudo docker run -d --device /dev/video0:/dev/video0 -p 8080:8080 gizmatron:latest
+        run: sudo docker run -d --privileged --device /dev/i2c-1 --device /dev/video0:/dev/video0 -p 8080:8080 gizmatron:latest
+      #sudo docker run -d --privileged --device /dev/i2c-1 --device /dev/video0:/dev/video0 -p 8080:8080 gizmatron:latest
