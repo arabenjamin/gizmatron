@@ -356,7 +356,7 @@ func (c *Cam) open_wecam() {
 	if c.Webcam == nil || c.IsOperational == false {
 		log.Println("Camera is not operational, trying to open camera ...")
 		var err error
-		c.Webcam, err = gocv.OpenVideoCapture(-1)
+		c.Webcam, err = gocv.OpenVideoCapture(0)
 		if err != nil {
 			log.Printf("Error opeing webcam\nERROR: %v", err)
 			c.IsOperational = false
