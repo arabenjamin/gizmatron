@@ -77,7 +77,7 @@ func InitArm() (*Arm, error) {
 		log.Printf("Could not initialize arm driver: %v", err)
 		return nil, err
 	}
-	defer arm_driver.Close()
+	//defer arm_driver.Close()
 
 	a := &Arm{
 
@@ -89,10 +89,29 @@ func InitArm() (*Arm, error) {
 		y_max:  20,
 	}
 
+	// set the PWM Frequency
+	//a.driver.SetPWMFreq(50)
+	log.Println("Setting PWM frequency to 50Hz...")
+	if err := a.driver.SetPWMFreq(50); err != nil {
+		log.Fatalf("Could not set PWM frequency: %v", err)
+	}
+
+	// Set initial angles for servos
+	a.driver.currentAngles[BASE_SERVO] = 90
+	a.driver.currentAngles[JOINT_1_SERVO] = 0
+	a.driver.currentAngles[JOINT_2_SERVO] = 0
+	a.driver.currentAngles[JOINT_3_SERVO] = 170
+	a.driver.currentAngles[JOINT_4_SERVO] = 180
+
+	for i, servo := range a.driver.currentAngles {
+		log.Printf("Setting initial angle for servo %d to %d degrees", i, servo)
+		if err := a.driver.setServoPulse(i, int(servo)); err != nil {
+			log.Printf("Error setting initial servo position: %v\n", err)
+		}
+	}
+
 	a.State = true
 	a.IsRunning = true
-	// set the PWM Frequency
-	a.driver.SetPWMFreq(50)
 
 	//log.Printf("JOINTS: %v", a.joints)
 	//a.Stop()
@@ -100,50 +119,35 @@ func InitArm() (*Arm, error) {
 }
 
 /* Update servo*/
-func (a *Arm) Update(pin int, speed int) error {
+func (a *Arm) Update(pin int, speed time.Duration) error {
 	// Update this servo
-	servo := a.joints[pin]
-	if servo.current_degree < servo.target_degree {
 
-		for servo.current_degree != servo.target_degree {
-
-			time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
-			servo.current_degree = servo.current_degree + 1
-			log.Printf("Moving Servo: on pin %v to %v ", servo.pin, int(servo.current_degree))
-			err := a.driver.ServoWrite(servo.pin, int(servo.current_degree))
-			if err != nil {
-				log.Printf("Falied to write to servo:  Error: %v", err)
-				return err
-			}
+	for i, angle := range a.driver.currentAngles {
+		log.Printf("Setting servo %d to %d degrees", i, angle)
+		if err := a.driver.ServoWrite(i, angle, speed); err != nil {
+			log.Printf("Error moving servo: %v\n", err)
 		}
-	} else {
-
-		for servo.target_degree < servo.current_degree {
-			time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
-			servo.current_degree = servo.current_degree - 1
-			log.Printf("Moving Servo: on pin %v to %v ", servo.pin, int(servo.current_degree))
-			err := a.driver.ServoWrite(servo.pin, int(servo.current_degree))
-			if err != nil {
-				log.Printf("Falied to write to servo:  Error: %v", err)
-				return err
-			}
-		}
+		time.Sleep(1 * time.Second)
 	}
+
 	return nil
 }
 
 /* Put Arm in Start Position */
 func (a *Arm) Start() error {
 
-	a.joints[0].target_degree = 45
-	a.joints[1].target_degree = 45
-	a.joints[2].target_degree = 135
-	a.joints[3].target_degree = 150
+	log.Println("Starting Arm...")
 
-	for i, v := range a.joints {
+	a.driver.currentAngles[BASE_SERVO] = 90
+	a.driver.currentAngles[JOINT_1_SERVO] = 45
+	a.driver.currentAngles[JOINT_2_SERVO] = 45
+	a.driver.currentAngles[JOINT_3_SERVO] = 135
+	a.driver.currentAngles[JOINT_4_SERVO] = 150
 
-		log.Printf("Moving Joint: %v", v)
-		err := a.Update(i, 100)
+	for i, angle := range a.driver.currentAngles {
+
+		log.Printf("Moving Joint: %v to %v", i, angle)
+		err := a.Update(i, 15)
 		if err != nil {
 			log.Printf("Failed to start arm: %v", err)
 			return err
@@ -155,14 +159,16 @@ func (a *Arm) Start() error {
 /* Put Arm in Stop Position */
 func (a *Arm) Stop() error {
 
-	a.joints[0].target_degree = 0
-	a.joints[1].target_degree = 0
-	a.joints[2].target_degree = 170
-	a.joints[3].target_degree = 180
-	for i, v := range a.joints {
+	a.driver.currentAngles[BASE_SERVO] = 90
+	a.driver.currentAngles[JOINT_1_SERVO] = 0
+	a.driver.currentAngles[JOINT_2_SERVO] = 0
+	a.driver.currentAngles[JOINT_3_SERVO] = 170
+	a.driver.currentAngles[JOINT_4_SERVO] = 180
+
+	for i, v := range a.driver.currentAngles {
 
 		log.Printf("Moving Joint: %v", v)
-		err := a.Update(i, 100)
+		err := a.Update(i, 15)
 		if err != nil {
 			log.Printf("failed to stop arm: %v", err)
 			return err

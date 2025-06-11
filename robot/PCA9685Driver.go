@@ -15,15 +15,13 @@ const (
 	PCA9685_MODE1    = 0x00
 	PCA9685_PRESCALE = 0xFE
 	LED0_ON_L        = 0x06
-	LED0_ON_H        = 0x07
-	LED0_OFF_L       = 0x08
-	LED0_OFF_H       = 0x09
 )
 
 // PCA9685Driver represents our custom driver
 type PCA9685Driver struct {
-	dev *i2c.Dev
-	bus i2c.BusCloser
+	dev           *i2c.Dev
+	bus           i2c.BusCloser
+	currentAngles [16]int // Keep track of the last angle for each channel
 }
 
 // NewPCA9685Driver initializes the I2C bus and connects to the PCA9685 device.
@@ -45,6 +43,10 @@ func NewPCA9685Driver() (*PCA9685Driver, error) {
 	driver := &PCA9685Driver{
 		dev: dev,
 		bus: bus,
+	}
+	// Initialize all angles to a neutral position (e.g., 90 degrees)
+	for i := range driver.currentAngles {
+		driver.currentAngles[i] = 90
 	}
 
 	// Reset the device to a known state.
@@ -80,7 +82,6 @@ func (d *PCA9685Driver) SetPWMFreq(freq float64) error {
 	prescale := byte(prescaleVal + 0.5) // Round to nearest int
 
 	// To set the prescaler, the chip must be in sleep mode.
-	// First, read the current MODE1 register.
 	oldMode := make([]byte, 1)
 	if err := d.dev.Tx([]byte{PCA9685_MODE1}, oldMode); err != nil {
 		return err
@@ -114,15 +115,11 @@ func (d *PCA9685Driver) SetPWMFreq(freq float64) error {
 }
 
 // SetPWM sets the on and off time for a single PWM channel.
-// `on` and `off` are values between 0 and 4095.
 func (d *PCA9685Driver) SetPWM(channel int, on, off uint16) error {
 	if channel < 0 || channel > 15 {
 		return fmt.Errorf("channel out of range (0-15)")
 	}
-	// The registers for each channel are sequential.
 	regBase := byte(LED0_ON_L + 4*channel)
-
-	// Data to write: register address followed by the 4 values.
 	data := []byte{
 		regBase,
 		byte(on),
@@ -130,23 +127,58 @@ func (d *PCA9685Driver) SetPWM(channel int, on, off uint16) error {
 		byte(off),
 		byte(off >> 8),
 	}
-
 	_, err := d.dev.Write(data)
 	return err
 }
 
-// ServoWrite converts an angle (0-180) to a PWM pulse and sets it.
-func (d *PCA9685Driver) ServoWrite(channel int, angle int) error {
+// setServoPulse is an internal helper that converts an angle to a PWM pulse and sets it instantly.
+func (d *PCA9685Driver) setServoPulse(channel int, angle int) error {
 	if angle < 0 || angle > 180 {
 		return fmt.Errorf("angle out of range (0-180)")
 	}
 	// These are typical pulse widths for a standard servo.
-	// You may need to tune them for your specific servo.
 	servoMin := 150 // Min pulse length (out of 4096)
 	servoMax := 600 // Max pulse length (out of 4096)
 
 	pulseLength := servoMin + int(float64(servoMax-servoMin)*float64(angle)/180.0)
 
-	// Set the pulse to start at time 0 and end at pulseLength.
 	return d.SetPWM(channel, 0, uint16(pulseLength))
+}
+
+// ServoWrite moves a servo to a specific angle at a given speed.
+// Speed is the delay in milliseconds between each 1-degree step.
+// Smaller speed value means faster movement.
+func (d *PCA9685Driver) ServoWrite(channel int, angle int, speed time.Duration) error {
+	if channel < 0 || channel > 15 {
+		return fmt.Errorf("channel out of range (0-15)")
+	}
+	if angle < 0 || angle > 180 {
+		return fmt.Errorf("angle out of range (0-180)")
+	}
+
+	startAngle := d.currentAngles[channel]
+	endAngle := angle
+
+	// Determine the direction of movement
+	if startAngle < endAngle {
+		// Move from start to end
+		for i := startAngle; i <= endAngle; i++ {
+			if err := d.setServoPulse(channel, i); err != nil {
+				return err
+			}
+			time.Sleep(speed * time.Millisecond)
+		}
+	} else {
+		// Move from start to end (in reverse)
+		for i := startAngle; i >= endAngle; i-- {
+			if err := d.setServoPulse(channel, i); err != nil {
+				return err
+			}
+			time.Sleep(speed * time.Millisecond)
+		}
+	}
+
+	// Update the current angle for the channel
+	d.currentAngles[channel] = angle
+	return nil
 }
