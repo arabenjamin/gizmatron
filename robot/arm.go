@@ -160,7 +160,7 @@ func (a *Arm) Stop() error {
 	for i, v := range a.joints {
 
 		log.Printf("Moving Joint: %v", v)
-		err := a.Update(i, 2000)
+		err := a.Update(i, 100)
 		if err != nil {
 			log.Printf("failed to stop arm: %v", err)
 			return err

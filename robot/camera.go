@@ -38,8 +38,8 @@ func InitCam() (*Cam, error) {
 		IsRunning:     false,
 	}
 
-	c.open_wecam()
-
+	//c.open_wecam()
+	//defer c.Webcam.Close()
 	/*
 		if c.IsOperational {
 
@@ -67,8 +67,23 @@ func InitCam() (*Cam, error) {
 	return c, nil
 }
 
-func (c *Cam) Stop() {
+func (c *Cam) open_wecam() {
+	if c.Webcam == nil || c.IsOperational == false {
+		log.Println("Camera is not operational, trying to open camera ...")
+		var err error
+		c.Webcam, err = gocv.OpenVideoCapture(0)
+		if err != nil {
+			log.Printf("Error opeing webcam\nERROR: %v", err)
+			c.IsOperational = false
+			return
+		}
+		c.IsOperational = true
+		log.Println("Camera is operational")
+	}
+}
 
+func (c *Cam) Stop() {
+	/* Stop the camera and the stream */
 	log.Printf("Closing Camera ....")
 
 	c.StopStream <- true
@@ -83,18 +98,8 @@ func (c *Cam) Stop() {
 
 }
 
-func (c *Cam) Restart() {
-
-	log.Printf("Restarting Camera ...")
-	c.Stop()
-	go c.Start()
-	log.Printf("Restarted camera successfully")
-
-}
-
-/* Start reading from the camera to the Buffer */
 func (c *Cam) Start() {
-
+	/* Start reading from the camera to the Buffer */
 	log.Printf("Starting Camera stream ...")
 	c.open_wecam()
 	defer c.Webcam.Close()
@@ -156,6 +161,65 @@ func (c *Cam) Start() {
 				}
 			}
 		}
+	}
+}
+
+func (c *Cam) Restart() {
+
+	log.Printf("Restarting Camera ...")
+	c.Stop()
+	go c.Start()
+	log.Printf("Restarted camera successfully")
+
+}
+
+func (c *Cam) StreamToServer() {
+
+	/* Sends Camera steam to WEbsocket server */
+
+	// Currently this is all wrong, and doesn't use websockets at all.
+	// It should be using websockets to send the stream to the server.
+
+	// TODO: Write tests to verify I've done this correctly
+
+	client := &http.Client{}
+
+	for {
+
+		var body bytes.Buffer
+		writer := multipart.NewWriter(&body)
+		part, err := writer.CreateFormFile("frame", "frame.jpg")
+		if err != nil {
+			log.Fatal(err)
+		}
+		part.Write(c.Buf)
+		writer.Close()
+
+		//bufferReader := &CustomBufferReader{buf: bytes.NewBuffer(c.Buf)}
+		//log.Println("Makeing request")
+		req, err := http.NewRequest("POST", "http://localhost:9090/api/v1/upload", &body) //
+		if err != nil {
+			log.Fatal(err)
+		}
+		//req.Header.Set("Content-Type", "multipart/x-mixed-replace; boundary=frame")
+		req.Header.Set("Content-Type", "video/mp4")
+		req.Header.Set("Transfer-Encoding", "chunked")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Printf("Connection terminated: %v", err)
+		}
+		defer resp.Body.Close()
+
+		//log.Printf("Request results %d", resp.StatusCode)
+		if resp.StatusCode != http.StatusOK {
+			log.Println("Response from Server: ", resp.StatusCode)
+			break
+		}
+
+		// Sleep for a short duration to control the frame rate
+		time.Sleep(33 * time.Millisecond) // ~30 FPS
+
 	}
 }
 
@@ -240,51 +304,6 @@ func (c *Cam) TakePicture() {
 	}
 }
 
-func (c *Cam) StreamToServer() {
-
-	// TODO: Write tests to verify I've done this correctly
-
-	client := &http.Client{}
-
-	for {
-
-		var body bytes.Buffer
-		writer := multipart.NewWriter(&body)
-		part, err := writer.CreateFormFile("frame", "frame.jpg")
-		if err != nil {
-			log.Fatal(err)
-		}
-		part.Write(c.Buf)
-		writer.Close()
-
-		//bufferReader := &CustomBufferReader{buf: bytes.NewBuffer(c.Buf)}
-		//log.Println("Makeing request")
-		req, err := http.NewRequest("POST", "http://localhost:9090/api/v1/upload", &body) //
-		if err != nil {
-			log.Fatal(err)
-		}
-		//req.Header.Set("Content-Type", "multipart/x-mixed-replace; boundary=frame")
-		req.Header.Set("Content-Type", "video/mp4")
-		req.Header.Set("Transfer-Encoding", "chunked")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			log.Printf("Connection terminated: %v", err)
-		}
-		defer resp.Body.Close()
-
-		//log.Printf("Request results %d", resp.StatusCode)
-		if resp.StatusCode != http.StatusOK {
-			log.Println("Response from Server: ", resp.StatusCode)
-			break
-		}
-
-		// Sleep for a short duration to control the frame rate
-		time.Sleep(33 * time.Millisecond) // ~30 FPS
-
-	}
-}
-
 /* NOTE: This is for testing and debugging/troubleshooting */
 func (c *Cam) RunCamera() {
 
@@ -349,20 +368,5 @@ func (c *Cam) RunCamInWindow() {
 			}
 
 		}
-	}
-}
-
-func (c *Cam) open_wecam() {
-	if c.Webcam == nil || c.IsOperational == false {
-		log.Println("Camera is not operational, trying to open camera ...")
-		var err error
-		c.Webcam, err = gocv.OpenVideoCapture(0)
-		if err != nil {
-			log.Printf("Error opeing webcam\nERROR: %v", err)
-			c.IsOperational = false
-			return
-		}
-		c.IsOperational = true
-		log.Println("Camera is operational")
 	}
 }

@@ -174,7 +174,7 @@ func (r *Robot) Start() (bool, error) {
 		// TODO: This should probably have an error handler
 		//r.Camera.DetectFaces = true
 		//log.Printf("Detecting Faces")
-		go r.Camera.Start()
+		//go r.Camera.Start()
 		log.Printf("Turning on Camera")
 	}
 
@@ -196,7 +196,8 @@ func (r *Robot) Stop() (bool, error) {
 	}
 
 	if r.Camera.IsOperational && r.Camera.IsRunning {
-		r.Camera.Stop()
+		//r.Camera.Stop()
+		log.Printf("Turning off Camera")
 	}
 
 	return r.IsRunning, nil
