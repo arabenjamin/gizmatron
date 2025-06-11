@@ -252,8 +252,9 @@ func set_facedetect(resp http.ResponseWriter, req *http.Request) {
 func start_bot(resp http.ResponseWriter, req *http.Request) {
 
 	bot := req.Context().Value("bot").(*robot.Robot)
-	status := fmt.Sprintf("%v, is already running", bot.Name)
-	if !bot.IsRunning {
+	status := fmt.Sprintf("%v current status is Operational: %v \nand Running: %v", bot.Name, bot.IsOperational, bot.IsRunning)
+
+	if bot.IsOperational && !bot.IsRunning {
 		status = fmt.Sprintf(" Starting %v", bot.Name)
 		go bot.Start()
 	}
@@ -280,8 +281,8 @@ func start_bot(resp http.ResponseWriter, req *http.Request) {
 func stop_bot(resp http.ResponseWriter, req *http.Request) {
 
 	bot := req.Context().Value("bot").(*robot.Robot)
-	status := fmt.Sprintf("%v, is not running", bot.Name)
-	if bot.IsRunning {
+	status := fmt.Sprintf("%v current status is Operational: %v \nand Running: %v", bot.Name, bot.IsOperational, bot.IsRunning)
+	if bot.IsOperational && bot.IsRunning {
 		go bot.Stop()
 	}
 

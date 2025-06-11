@@ -37,16 +37,17 @@ import (
 */
 
 type Arm struct {
-	err       error
-	State     bool
-	IsRunning bool
-	name      string
-	driver    *PCA9685Driver
-	pins      []int
-	joints    []*Servo
-	x_max     int
-	y_max     int
-	speed     time.Duration // speed in ms
+	err           error
+	State         bool
+	IsRunning     bool
+	IsOperational bool
+	Name          string
+	driver        *PCA9685Driver
+	pins          []int
+	joints        []*Servo
+	x_max         int
+	y_max         int
+	speed         time.Duration // speed in ms
 }
 
 func InitArm() (*Arm, error) {
@@ -84,7 +85,7 @@ func InitArm() (*Arm, error) {
 	a := &Arm{
 
 		driver: arm_driver,
-		name:   "Gizmatron Arm",
+		Name:   "Gizmatron Arm",
 		pins:   pins,
 		joints: servos,
 		x_max:  20,
@@ -122,10 +123,7 @@ func InitArm() (*Arm, error) {
 
 	log.Println("Arm Position: ", a.driver.currentAngles)
 	a.State = true
-	a.IsRunning = true
-
-	//log.Printf("JOINTS: %v", a.joints)
-	//a.Stop()
+	a.IsOperational = true
 	return a, nil
 }
 
@@ -136,11 +134,15 @@ func (a *Arm) Update(pin int, speed time.Duration) error {
 	for i, joint := range a.joints {
 		log.Printf("Setting servo %d to %d degrees", i, joint.target_degree)
 		if err := a.driver.ServoWrite(int(joint.pin), int(joint.target_degree), speed); err != nil {
-			log.Printf("Error moving servo: %v\n", err)
+
+			// TODO: Keep track of servos that fail to move
+			// and return an error at the end of the function
+			// so that we can retry them later
+			log.Printf("Error! moving servo: %v\n", err)
 		}
 		joint.current_degree = joint.target_degree
 		log.Printf("Joint %d current degree: %d", joint.pin, joint.current_degree)
-		time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
+		//time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
 	}
 
 	return nil
@@ -167,6 +169,7 @@ func (a *Arm) Start() error {
 		}
 
 	}
+	a.IsRunning = true
 	return nil
 }
 
@@ -188,6 +191,7 @@ func (a *Arm) Stop() error {
 			return err
 		}
 	}
+	a.IsRunning = false
 	return nil
 }
 

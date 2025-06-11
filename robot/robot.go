@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/warthog618/go-gpiocdev"
-	"gobot.io/x/gobot/v2/platforms/raspi"
 )
 
 const (
@@ -27,32 +26,30 @@ type Device struct {
 }
 
 type Robot struct {
-	Name       string
-	IsRunning  bool
-	State      bool           // depreciated
-	adaptor    *raspi.Adaptor // I really want to depreciate this
-	runningled *gpiocdev.Line
-	Serverled  *gpiocdev.Line
-	armled     *gpiocdev.Line
-	arm        *Arm
-	Camera     *Cam
-	Devices    map[string]*Device
-	log        *log.Logger
+	Name          string
+	IsRunning     bool
+	IsOperational bool
+	State         bool // depreciated
+	runningled    *gpiocdev.Line
+	Serverled     *gpiocdev.Line
+	armled        *gpiocdev.Line
+	arm           *Arm
+	Camera        *Cam
+	Devices       map[string]*Device
+	log           *log.Logger
 }
 
 func InitRobot(botlog *log.Logger) (*Robot, error) {
 
-	botlog.Println("Initializing Gizmatron startup ...")
 	robot := &Robot{
 		Name:    "Gizmatron",
-		adaptor: raspi.NewAdaptor(),
 		Devices: make(map[string]*Device),
 		log:     botlog,
 	}
 
 	/* Start our devices*/
 	robot.log.Println("Initalizing Gizmatron Devices ...")
-	robot.IsRunning = true
+
 	err := robot.initDevices()
 	if err != nil {
 		// TODO: This error handler needs to be rethought.
@@ -71,7 +68,7 @@ func InitRobot(botlog *log.Logger) (*Robot, error) {
 		// Turn on our operating light
 		robot.runningled.SetValue(1)
 	}
-
+	robot.IsOperational = true
 	robot.log.Println("Gizmatron Startup Complete.")
 	return robot, nil
 }
@@ -102,6 +99,7 @@ func (r *Robot) initDevices() error {
 		Name:   "ArmGadget",
 		Status: "Operational",
 	}
+
 	arm, err := InitArm()
 	if err != nil {
 		errmsg := fmt.Sprintf("Warning!! Failed to initialize arm!: %v", err)
@@ -111,7 +109,7 @@ func (r *Robot) initDevices() error {
 	}
 	r.arm = arm
 
-	if arm.IsRunning {
+	if arm.IsOperational {
 		r.Devices["ArmLed"] = &Device{
 			Name:   "ArmLed",
 			Status: "Operational",
@@ -143,7 +141,6 @@ func (r *Robot) initDevices() error {
 	//defer r.Camera.Stop()
 	r.Devices["Camera"].Data = map[string]interface{}{
 		"Detecting":   r.Camera.DetectFaces,
-		"Running":     r.Camera.IsRunning,
 		"Operational": r.Camera.IsOperational,
 	}
 
@@ -161,7 +158,7 @@ func (r *Robot) Start() (bool, error) {
 
 	log.Println("Starting Arm and Camera...")
 
-	if r.arm.IsRunning {
+	if r.arm.IsOperational {
 		r.armled.SetValue(1)
 		if ok := r.arm.Start(); ok != nil {
 			errMsg := fmt.Sprintf("Error Failed to move arm to starting position :%v", ok)
@@ -185,9 +182,8 @@ func (r *Robot) Start() (bool, error) {
 
 func (r *Robot) Stop() (bool, error) {
 	log.Println("Stoping Arm and Camera")
-	r.IsRunning = false
 
-	if r.arm.IsRunning {
+	if r.arm.IsOperational {
 		r.armled.SetValue(0)
 		if ok := r.arm.Stop(); ok != nil {
 			errMsg := fmt.Sprintf("Error Faild to return arm to default positon:%v", ok)
@@ -200,7 +196,7 @@ func (r *Robot) Stop() (bool, error) {
 		//r.Camera.Stop()
 		log.Printf("Turning off Camera")
 	}
-
+	r.IsRunning = false
 	return r.IsRunning, nil
 }
 
