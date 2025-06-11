@@ -59,7 +59,8 @@ func InitArm() (*Arm, error) {
 	}
 
 	var servos []*Servo
-
+	s0 := NewServo(true, pins[0], 2.0)
+	servos = append(servos, s0)
 	s1 := NewServo(true, pins[1], 10.3)
 	servos = append(servos, s1)
 
