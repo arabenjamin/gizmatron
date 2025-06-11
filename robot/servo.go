@@ -29,11 +29,11 @@ type Servo struct {
 	acoords        cords
 	bcoords        cords
 	direction      bool // invert values based on the pysical direction of the servo
-	min_degree     int
-	max_degree     int
-	init_degree    int
-	current_degree int
-	target_degree  int
+	min_degree     byte
+	max_degree     byte
+	init_degree    byte
+	current_degree byte
+	target_degree  byte
 	speed          float64
 	length         float64
 }

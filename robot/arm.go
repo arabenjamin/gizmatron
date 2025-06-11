@@ -119,7 +119,8 @@ func (a *Arm) Update(pin int, speed int) error {
 
 			time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
 			servo.current_degree = servo.current_degree + 1
-			err := a.driver.ServoWrite(servo.pin, servo.current_degree)
+
+			err := a.driver.ServoWrite(servo.pin, int(servo.current_degree))
 			if err != nil {
 				log.Printf("Falied to write to servo:  Error: %v", err)
 				return err
@@ -130,7 +131,7 @@ func (a *Arm) Update(pin int, speed int) error {
 		for servo.target_degree < servo.current_degree {
 			time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
 			servo.current_degree = servo.current_degree - 1
-			err := a.driver.ServoWrite(servo.pin, servo.current_degree)
+			err := a.driver.ServoWrite(servo.pin, int(servo.current_degree))
 			if err != nil {
 				log.Printf("Falied to write to servo:  Error: %v", err)
 				return err
