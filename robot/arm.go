@@ -3,10 +3,8 @@ package robot
 import (
 	"log"
 	_ "math"
-	"strconv"
 	"time"
 
-	"gobot.io/x/gobot/v2/drivers/i2c"
 	"gobot.io/x/gobot/v2/platforms/raspi"
 )
 
@@ -46,7 +44,7 @@ type Arm struct {
 	IsRunning bool
 	adaptor   *raspi.Adaptor
 	name      string
-	driver    *i2c.PCA9685Driver
+	driver    *PCA9685Driver
 	pins      []int
 	joints    []*Servo
 	x_max     int
@@ -77,9 +75,15 @@ func InitArm(adaptor *raspi.Adaptor) (*Arm, error) {
 	s4 := NewServo(false, pins[4], 2.0)
 	servos = append(servos, s4)
 
+	arm_driver, err := NewPCA9685Driver()
+	if err != nil {
+		log.Printf("Could not initialize arm driver: %v", err)
+		return nil, err
+	}
+
 	a := &Arm{
 		adaptor: adaptor,
-		driver:  i2c.NewPCA9685Driver(adaptor, i2c.WithBus(0), i2c.WithAddress(0x40)),
+		driver:  arm_driver,
 		name:    "Gizmatron Arm",
 		pins:    pins,
 		joints:  servos,
@@ -87,21 +91,14 @@ func InitArm(adaptor *raspi.Adaptor) (*Arm, error) {
 		y_max:   20,
 	}
 
-	err := a.driver.Start()
-	if err != nil {
-		log.Printf("Could not start Arm driver: %v", err)
-		a.err = err
-		a.IsRunning = false
-		return a, err
-	}
 	a.State = true
 	a.IsRunning = true
 	// set the PWM Frequency
 	a.driver.SetPWMFreq(50)
 
 	for _, v := range a.joints {
-		// TODO: Update this to use the Update method
-		err := a.driver.ServoWrite(strconv.Itoa(v.pin), v.init_degree)
+		// Update this to use the Update method
+		err := a.Update(v.pin, 100) // Using the Update method instead of ServoWrite
 		if err != nil {
 			a.err = err
 			log.Printf("Falied to write to servo:  Error: %v", err)
@@ -122,7 +119,7 @@ func (a *Arm) Update(pin int, speed int) error {
 
 			time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
 			servo.current_degree = servo.current_degree + 1
-			err := a.driver.ServoWrite(strconv.Itoa(servo.pin), servo.current_degree)
+			err := a.driver.ServoWrite(servo.pin, servo.current_degree)
 			if err != nil {
 				log.Printf("Falied to write to servo:  Error: %v", err)
 				return err
@@ -133,7 +130,7 @@ func (a *Arm) Update(pin int, speed int) error {
 		for servo.target_degree < servo.current_degree {
 			time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
 			servo.current_degree = servo.current_degree - 1
-			err := a.driver.ServoWrite(strconv.Itoa(servo.pin), servo.current_degree)
+			err := a.driver.ServoWrite(servo.pin, servo.current_degree)
 			if err != nil {
 				log.Printf("Falied to write to servo:  Error: %v", err)
 				return err
