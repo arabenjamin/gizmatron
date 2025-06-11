@@ -125,6 +125,7 @@ func (r *Robot) initDevices() error {
 			r.Devices["ArmLed"].Error = armLedErr.Error()
 		}
 		r.armled = armled
+
 	}
 
 	/* Set up pur camera */
