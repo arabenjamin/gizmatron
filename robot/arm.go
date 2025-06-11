@@ -79,7 +79,7 @@ func InitArm(adaptor *raspi.Adaptor) (*Arm, error) {
 
 	a := &Arm{
 		adaptor: adaptor,
-		driver:  i2c.NewPCA9685Driver(adaptor),
+		driver:  i2c.NewPCA9685Driver(adaptor, i2c.WithBus(0), i2c.WithAddress(0x40)),
 		name:    "Gizmatron Arm",
 		pins:    pins,
 		joints:  servos,
