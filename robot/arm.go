@@ -4,8 +4,6 @@ import (
 	"log"
 	_ "math"
 	"time"
-
-	"gobot.io/x/gobot/v2/platforms/raspi"
 )
 
 /*
@@ -42,7 +40,6 @@ type Arm struct {
 	err       error
 	State     bool
 	IsRunning bool
-	adaptor   *raspi.Adaptor
 	name      string
 	driver    *PCA9685Driver
 	pins      []int
@@ -51,7 +48,7 @@ type Arm struct {
 	y_max     int
 }
 
-func InitArm(adaptor *raspi.Adaptor) (*Arm, error) {
+func InitArm() (*Arm, error) {
 
 	pins := []int{
 		BASE_SERVO,
@@ -82,13 +79,13 @@ func InitArm(adaptor *raspi.Adaptor) (*Arm, error) {
 	}
 
 	a := &Arm{
-		adaptor: adaptor,
-		driver:  arm_driver,
-		name:    "Gizmatron Arm",
-		pins:    pins,
-		joints:  servos,
-		x_max:   20,
-		y_max:   20,
+
+		driver: arm_driver,
+		name:   "Gizmatron Arm",
+		pins:   pins,
+		joints: servos,
+		x_max:  20,
+		y_max:  20,
 	}
 
 	a.State = true
@@ -96,16 +93,8 @@ func InitArm(adaptor *raspi.Adaptor) (*Arm, error) {
 	// set the PWM Frequency
 	a.driver.SetPWMFreq(50)
 
-	for _, v := range a.joints {
-		// Update this to use the Update method
-		err := a.Update(v.pin, 100) // Using the Update method instead of ServoWrite
-		if err != nil {
-			a.err = err
-			log.Printf("Falied to write to servo:  Error: %v", err)
-			return a, err
-		}
-	}
 	//log.Printf("JOINTS: %v", a.joints)
+	a.Stop()
 	return a, nil
 }
 
