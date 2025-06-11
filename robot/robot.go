@@ -102,7 +102,7 @@ func (r *Robot) initDevices() error {
 		Name:   "ArmGadget",
 		Status: "Operational",
 	}
-	arm, err := InitArm(r.adaptor)
+	arm, err := InitArm()
 	if err != nil {
 		errmsg := fmt.Sprintf("Warning!! Failed to initialize arm!: %v", err)
 		r.log.Print(errmsg)
