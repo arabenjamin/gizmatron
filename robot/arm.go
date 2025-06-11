@@ -46,6 +46,7 @@ type Arm struct {
 	joints    []*Servo
 	x_max     int
 	y_max     int
+	speed     time.Duration // speed in ms
 }
 
 func InitArm() (*Arm, error) {
@@ -88,6 +89,7 @@ func InitArm() (*Arm, error) {
 		joints: servos,
 		x_max:  20,
 		y_max:  20,
+		speed:  100,
 	}
 
 	// set the PWM Frequency
@@ -109,9 +111,16 @@ func InitArm() (*Arm, error) {
 		if err := a.driver.setServoPulse(i, int(servo.target_degree)); err != nil {
 			log.Printf("Error setting initial servo position: %v\n", err)
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(time.Duration(1000*100) * time.Nanosecond)
 	}
 
+	a.driver.currentAngles[BASE_SERVO] = int(a.joints[BASE_SERVO].target_degree)
+	a.driver.currentAngles[JOINT_1_SERVO] = int(a.joints[JOINT_1_SERVO].target_degree)
+	a.driver.currentAngles[JOINT_2_SERVO] = int(a.joints[JOINT_2_SERVO].target_degree)
+	a.driver.currentAngles[JOINT_3_SERVO] = int(a.joints[JOINT_3_SERVO].target_degree)
+	a.driver.currentAngles[JOINT_4_SERVO] = int(a.joints[JOINT_4_SERVO].target_degree)
+
+	log.Println("Arm Position: ", a.driver.currentAngles)
 	a.State = true
 	a.IsRunning = true
 
@@ -124,12 +133,14 @@ func InitArm() (*Arm, error) {
 func (a *Arm) Update(pin int, speed time.Duration) error {
 	// Update this servo
 
-	for i, angle := range a.driver.currentAngles {
-		log.Printf("Setting servo %d to %d degrees", i, angle)
-		if err := a.driver.ServoWrite(i, angle, speed); err != nil {
+	for i, joint := range a.joints {
+		log.Printf("Setting servo %d to %d degrees", i, joint.target_degree)
+		if err := a.driver.ServoWrite(int(joint.pin), int(joint.target_degree), speed); err != nil {
 			log.Printf("Error moving servo: %v\n", err)
 		}
-		time.Sleep(1 * time.Second)
+		joint.current_degree = joint.target_degree
+		log.Printf("Joint %d current degree: %d", joint.pin, joint.current_degree)
+		time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
 	}
 
 	return nil
@@ -146,14 +157,15 @@ func (a *Arm) Start() error {
 	a.joints[JOINT_3_SERVO].target_degree = 135
 	a.joints[JOINT_4_SERVO].target_degree = 150
 
-	for i, servo := range a.joints {
+	for i, joint := range a.joints {
 
-		log.Printf("Moving Joint: %v to %v", i, servo.target_degree)
-		err := a.Update(i, 100)
+		log.Printf("Moving Joint: %v to %v", i, joint.target_degree)
+		err := a.Update(joint.pin, 100)
 		if err != nil {
 			log.Printf("Failed to start arm: %v", err)
 			return err
 		}
+
 	}
 	return nil
 }
@@ -167,10 +179,10 @@ func (a *Arm) Stop() error {
 	a.joints[JOINT_3_SERVO].target_degree = 170
 	a.joints[JOINT_4_SERVO].target_degree = 180
 
-	for i, servo := range a.joints {
+	for _, joint := range a.joints {
 
-		log.Printf("Moving Joint: %v", servo.target_degree)
-		err := a.Update(i, 100)
+		log.Printf("Moving Joint: %v", joint.target_degree)
+		err := a.Update(joint.pin, 100)
 		if err != nil {
 			log.Printf("failed to stop arm: %v", err)
 			return err
