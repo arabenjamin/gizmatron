@@ -97,17 +97,18 @@ func InitArm() (*Arm, error) {
 	}
 
 	// Set initial angles for servos
-	a.driver.currentAngles[BASE_SERVO] = 90
-	a.driver.currentAngles[JOINT_1_SERVO] = 0
-	a.driver.currentAngles[JOINT_2_SERVO] = 0
-	a.driver.currentAngles[JOINT_3_SERVO] = 170
-	a.driver.currentAngles[JOINT_4_SERVO] = 180
+	a.joints[BASE_SERVO].target_degree = 90
+	a.joints[JOINT_1_SERVO].target_degree = 0
+	a.joints[JOINT_2_SERVO].target_degree = 0
+	a.joints[JOINT_3_SERVO].target_degree = 170
+	a.joints[JOINT_4_SERVO].target_degree = 180
 
-	for i, servo := range a.driver.currentAngles {
-		log.Printf("Setting initial angle for servo %d to %d degrees", i, servo)
-		if err := a.driver.setServoPulse(i, int(servo)); err != nil {
+	for i, servo := range a.joints {
+		log.Printf("Setting initial angle for servo %d to %d degrees", i, servo.target_degree)
+		if err := a.driver.setServoPulse(i, int(servo.target_degree)); err != nil {
 			log.Printf("Error setting initial servo position: %v\n", err)
 		}
+		time.Sleep(1 * time.Second)
 	}
 
 	a.State = true
@@ -138,16 +139,16 @@ func (a *Arm) Start() error {
 
 	log.Println("Starting Arm...")
 
-	a.driver.currentAngles[BASE_SERVO] = 90
-	a.driver.currentAngles[JOINT_1_SERVO] = 45
-	a.driver.currentAngles[JOINT_2_SERVO] = 45
-	a.driver.currentAngles[JOINT_3_SERVO] = 135
-	a.driver.currentAngles[JOINT_4_SERVO] = 150
+	a.joints[BASE_SERVO].target_degree = 90
+	a.joints[JOINT_1_SERVO].target_degree = 45
+	a.joints[JOINT_2_SERVO].target_degree = 45
+	a.joints[JOINT_3_SERVO].target_degree = 135
+	a.joints[JOINT_4_SERVO].target_degree = 150
 
-	for i, angle := range a.driver.currentAngles {
+	for i, servo := range a.joints {
 
-		log.Printf("Moving Joint: %v to %v", i, angle)
-		err := a.Update(i, 15)
+		log.Printf("Moving Joint: %v to %v", i, servo.target_degree)
+		err := a.Update(i, 100)
 		if err != nil {
 			log.Printf("Failed to start arm: %v", err)
 			return err
@@ -159,16 +160,16 @@ func (a *Arm) Start() error {
 /* Put Arm in Stop Position */
 func (a *Arm) Stop() error {
 
-	a.driver.currentAngles[BASE_SERVO] = 90
-	a.driver.currentAngles[JOINT_1_SERVO] = 0
-	a.driver.currentAngles[JOINT_2_SERVO] = 0
-	a.driver.currentAngles[JOINT_3_SERVO] = 170
-	a.driver.currentAngles[JOINT_4_SERVO] = 180
+	a.joints[BASE_SERVO].target_degree = 90
+	a.joints[JOINT_1_SERVO].target_degree = 0
+	a.joints[JOINT_2_SERVO].target_degree = 0
+	a.joints[JOINT_3_SERVO].target_degree = 170
+	a.joints[JOINT_4_SERVO].target_degree = 180
 
-	for i, v := range a.driver.currentAngles {
+	for i, servo := range a.joints {
 
-		log.Printf("Moving Joint: %v", v)
-		err := a.Update(i, 15)
+		log.Printf("Moving Joint: %v", servo.target_degree)
+		err := a.Update(i, 100)
 		if err != nil {
 			log.Printf("failed to stop arm: %v", err)
 			return err

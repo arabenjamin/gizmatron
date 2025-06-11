@@ -21,7 +21,7 @@ const (
 type PCA9685Driver struct {
 	dev           *i2c.Dev
 	bus           i2c.BusCloser
-	currentAngles [16]int // Keep track of the last angle for each channel
+	currentAngles [5]int // Keep track of the last angle for each channel
 }
 
 // NewPCA9685Driver initializes the I2C bus and connects to the PCA9685 device.
