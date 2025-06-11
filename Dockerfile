@@ -18,7 +18,7 @@ ENV PATH /go/bin:$PATH
 RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
 #RUN sudo modprobe bcm2835-v4l2
 
-RUN apt-get update && apt-get install git gcc libc-dev
+RUN apt-get update && apt-get install git gcc libc-dev i2c-tools
 
 RUN git clone https://github.com/arabenjamin/gizmatron.git
 
