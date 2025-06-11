@@ -18,7 +18,7 @@ ENV PATH /go/bin:$PATH
 RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
 #RUN sudo modprobe bcm2835-v4l2
 
-RUN apt-get update && apt-get install git gcc libc-dev i2c-tools
+RUN apt-get update && apt-get install -y git gcc libc-dev i2c-tools
 
 RUN git clone https://github.com/arabenjamin/gizmatron.git
 
@@ -28,10 +28,6 @@ WORKDIR gizmatron/
 RUN go mod tidy
 RUN go build -a . 
 
-RUN groupadd i2c
-RUN useradd -ms /bin/bash ara 
-RUN usermod -aG i2c,dialout ara
-USER ara
 
 CMD ["./gizmatron"]
 
