@@ -2,6 +2,7 @@ package robot
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"periph.io/x/conn/v3/i2c"
@@ -28,13 +29,15 @@ type PCA9685Driver struct {
 func NewPCA9685Driver() (*PCA9685Driver, error) {
 	// Initialize the host hardware. This is a required step for periph.io.
 	if _, err := host.Init(); err != nil {
-		return nil, fmt.Errorf("failed to initialize host: %w", err)
+		log.Printf("failed to initialize host: %v", err)
+		return nil, err
 	}
 
 	// Open the default I2C bus.
 	bus, err := i2creg.Open("")
 	if err != nil {
-		return nil, fmt.Errorf("failed to open I2C bus: %w", err)
+		log.Printf("failed to open I2C bus: %w", err)
+		return nil, err
 	}
 
 	// Create a new device object for communication.
@@ -166,7 +169,7 @@ func (d *PCA9685Driver) ServoWrite(channel int, angle int, speed time.Duration) 
 			if err := d.setServoPulse(channel, i); err != nil {
 				return err
 			}
-			time.Sleep(speed * time.Millisecond)
+			time.Sleep(speed * time.Nanosecond)
 		}
 	} else {
 		// Move from start to end (in reverse)
@@ -174,7 +177,7 @@ func (d *PCA9685Driver) ServoWrite(channel int, angle int, speed time.Duration) 
 			if err := d.setServoPulse(channel, i); err != nil {
 				return err
 			}
-			time.Sleep(speed * time.Millisecond)
+			time.Sleep(speed * time.Nanosecond)
 		}
 	}
 

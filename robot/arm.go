@@ -128,11 +128,11 @@ func InitArm() (*Arm, error) {
 }
 
 /* Update servo*/
-func (a *Arm) Update(pin int, speed time.Duration) error {
+func (a *Arm) UpdateArm(speed time.Duration) error {
 	// Update this servo
+	for _, joint := range a.joints {
 
-	for i, joint := range a.joints {
-		log.Printf("Setting servo %d to %d degrees", i, joint.target_degree)
+		log.Printf("Setting servo %d from %d degrees to %d degrees at %d rate", joint.pin, joint.current_degree, joint.target_degree, speed)
 		if err := a.driver.ServoWrite(int(joint.pin), int(joint.target_degree), speed); err != nil {
 
 			// TODO: Keep track of servos that fail to move
@@ -143,6 +143,7 @@ func (a *Arm) Update(pin int, speed time.Duration) error {
 		joint.current_degree = joint.target_degree
 		log.Printf("Joint %d current degree: %d", joint.pin, joint.current_degree)
 		//time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
+
 	}
 
 	return nil
@@ -159,16 +160,12 @@ func (a *Arm) Start() error {
 	a.joints[JOINT_3_SERVO].target_degree = 135
 	a.joints[JOINT_4_SERVO].target_degree = 150
 
-	for i, joint := range a.joints {
-
-		log.Printf("Moving Joint: %v to %v", i, joint.target_degree)
-		err := a.Update(joint.pin, 100)
-		if err != nil {
-			log.Printf("Failed to start arm: %v", err)
-			return err
-		}
-
+	err := a.UpdateArm(1000)
+	if err != nil {
+		log.Printf("Failed to start arm: %v", err)
+		return err
 	}
+
 	a.IsRunning = true
 	return nil
 }
@@ -182,14 +179,10 @@ func (a *Arm) Stop() error {
 	a.joints[JOINT_3_SERVO].target_degree = 170
 	a.joints[JOINT_4_SERVO].target_degree = 180
 
-	for _, joint := range a.joints {
-
-		log.Printf("Moving Joint: %v", joint.target_degree)
-		err := a.Update(joint.pin, 100)
-		if err != nil {
-			log.Printf("failed to stop arm: %v", err)
-			return err
-		}
+	err := a.UpdateArm(1000)
+	if err != nil {
+		log.Printf("failed to stop arm: %v", err)
+		return err
 	}
 	a.IsRunning = false
 	return nil

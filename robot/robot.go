@@ -19,10 +19,12 @@ const (
 )
 
 type Device struct {
-	Name   string
-	Status string
-	Data   map[string]interface{}
-	Error  string
+	Name          string
+	Status        string
+	IsOperational bool
+	IsRunning     bool
+	Data          map[string]interface{}
+	Error         string
 }
 
 type Robot struct {
@@ -57,7 +59,6 @@ func InitRobot(botlog *log.Logger) (*Robot, error) {
 		// we want it to tell us which devices have errors, not that initDevices()
 		// had errors
 		robot.log.Printf("%v failed to intialize device: %v", robot.Name, err)
-		robot.IsRunning = false
 	}
 	robot.log.Println("Gizmatron devices initialized.")
 

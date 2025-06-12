@@ -41,10 +41,7 @@ func get_status(resp http.ResponseWriter, req *http.Request) {
 
 	bot := req.Context().Value("bot").(*robot.Robot)
 
-	status := fmt.Sprintf("%v, is running", bot.Name)
-	if !bot.IsRunning {
-		status = fmt.Sprintf("%v, is not running", bot.Name)
-	}
+	status := fmt.Sprintf("%v current status is Operational: %v \nand Running: %v", bot.Name, bot.IsOperational, bot.IsRunning)
 
 	thisRequest := map[string]interface{}{
 		"time":           time.Now().Unix(),
