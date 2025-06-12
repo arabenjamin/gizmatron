@@ -36,7 +36,7 @@ func NewPCA9685Driver() (*PCA9685Driver, error) {
 	// Open the default I2C bus.
 	bus, err := i2creg.Open("")
 	if err != nil {
-		log.Printf("failed to open I2C bus: %w", err)
+		log.Printf("failed to open I2C bus: %v", err)
 		return nil, err
 	}
 

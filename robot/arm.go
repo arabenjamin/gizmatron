@@ -63,6 +63,7 @@ func InitArm() (*Arm, error) {
 	var servos []*Servo
 	s0 := NewServo(true, pins[0], 2.0)
 	servos = append(servos, s0)
+
 	s1 := NewServo(true, pins[1], 10.3)
 	servos = append(servos, s1)
 
@@ -80,7 +81,7 @@ func InitArm() (*Arm, error) {
 		log.Printf("Could not initialize arm driver: %v", err)
 		return nil, err
 	}
-	//defer arm_driver.Close()
+	defer arm_driver.Close()
 
 	a := &Arm{
 
@@ -107,12 +108,12 @@ func InitArm() (*Arm, error) {
 	a.joints[JOINT_3_SERVO].target_degree = 170
 	a.joints[JOINT_4_SERVO].target_degree = 180
 
-	for i, servo := range a.joints {
-		log.Printf("Setting initial angle for servo %d to %d degrees", i, servo.target_degree)
-		if err := a.driver.setServoPulse(i, int(servo.target_degree)); err != nil {
+	for _, joint := range a.joints {
+		log.Printf("Setting initial angle for servo %d to %d degrees", joint.pin, joint.target_degree)
+		if err := a.driver.setServoPulse(joint.pin, int(joint.target_degree)); err != nil {
 			log.Printf("Error setting initial servo position: %v\n", err)
 		}
-		time.Sleep(time.Duration(1000*100) * time.Nanosecond)
+		//time.Sleep(time.Duration(1000*100) * time.Nanosecond)
 	}
 
 	a.driver.currentAngles[BASE_SERVO] = int(a.joints[BASE_SERVO].target_degree)

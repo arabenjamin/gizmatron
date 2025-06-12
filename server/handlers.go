@@ -252,7 +252,7 @@ func start_bot(resp http.ResponseWriter, req *http.Request) {
 	status := fmt.Sprintf("%v current status is Operational: %v \nand Running: %v", bot.Name, bot.IsOperational, bot.IsRunning)
 
 	if bot.IsOperational && !bot.IsRunning {
-		status = fmt.Sprintf(" Starting %v", bot.Name)
+		status = fmt.Sprintf("%v current status is Operational: %v \nand Running: %v", bot.Name, bot.IsOperational, bot.IsRunning)
 		go bot.Start()
 	}
 
@@ -280,6 +280,7 @@ func stop_bot(resp http.ResponseWriter, req *http.Request) {
 	bot := req.Context().Value("bot").(*robot.Robot)
 	status := fmt.Sprintf("%v current status is Operational: %v \nand Running: %v", bot.Name, bot.IsOperational, bot.IsRunning)
 	if bot.IsOperational && bot.IsRunning {
+		status = fmt.Sprintf("%v current status is Operational: %v \nand Running: %v", bot.Name, bot.IsOperational, bot.IsRunning)
 		go bot.Stop()
 	}
 
