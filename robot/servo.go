@@ -25,6 +25,7 @@ import (
 		All of our math will be based on those lengths
 */
 type Servo struct {
+	driver 		   *PCA9685Driver // There is some thought that the servo driver belongs here, but currently not in use.
 	pin            int //  pysical pin number on PCA9685 servo connected to
 	acoords        cords
 	bcoords        cords
@@ -47,6 +48,8 @@ type cords struct {
 func NewServo(direction bool, pin int, length float64) *Servo {
 
 	// Setup Default servo configurations
+
+
 	s := &Servo{
 		direction: direction,
 		pin:       pin,

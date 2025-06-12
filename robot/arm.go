@@ -52,30 +52,25 @@ type Arm struct {
 
 func InitArm() (*Arm, error) {
 
-	pins := []int{
-		BASE_SERVO,
-		JOINT_1_SERVO,
-		JOINT_2_SERVO,
-		JOINT_3_SERVO,
-		JOINT_4_SERVO,
-	}
 
 	var servos []*Servo
-	s0 := NewServo(true, pins[0], 2.0)
+	s0 := NewServo(true, BASE_SERVO, 2.0)
 	servos = append(servos, s0)
 
-	s1 := NewServo(true, pins[1], 10.3)
+	s1 := NewServo(true, JOINT_1_SERVO, 10.3)
 	servos = append(servos, s1)
 
-	s2 := NewServo(true, pins[2], 2.8)
+	s2 := NewServo(true, JOINT_2_SERVO, 2.8)
 	servos = append(servos, s2)
 
-	s3 := NewServo(false, pins[3], 10.3)
+	s3 := NewServo(false, JOINT_3_SERVO, 10.3)
 	servos = append(servos, s3)
 
-	s4 := NewServo(false, pins[4], 2.0)
+	s4 := NewServo(false, JOINT_4_SERVO, 2.0)
 	servos = append(servos, s4)
 
+
+	// TODO: The driver should be part of the servo struct
 	arm_driver, err := NewPCA9685Driver()
 	if err != nil {
 		log.Printf("Could not initialize arm driver: %v", err)
@@ -162,7 +157,7 @@ func (a *Arm) Start() error {
 	a.joints[JOINT_3_SERVO].target_degree = 135
 	a.joints[JOINT_4_SERVO].target_degree = 150
 
-	err := a.UpdateArm(1000)
+	err := a.UpdateArm(10)
 	if err != nil {
 		log.Printf("Failed to start arm: %v", err)
 		return err
@@ -181,7 +176,7 @@ func (a *Arm) Stop() error {
 	a.joints[JOINT_3_SERVO].target_degree = 170
 	a.joints[JOINT_4_SERVO].target_degree = 180
 
-	err := a.UpdateArm(1000)
+	err := a.UpdateArm(10)
 	if err != nil {
 		log.Printf("failed to stop arm: %v", err)
 		return err
