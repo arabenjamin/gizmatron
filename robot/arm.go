@@ -140,6 +140,7 @@ func (a *Arm) UpdateArm(speed time.Duration) error {
 			// and return an error at the end of the function
 			// so that we can retry them later
 			log.Printf("Error! moving servo: %v\n", err)
+			return err
 		}
 		joint.current_degree = joint.target_degree
 		log.Printf("Joint %d current degree: %d", joint.pin, joint.current_degree)

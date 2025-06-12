@@ -169,7 +169,7 @@ func (d *PCA9685Driver) ServoWrite(channel int, angle int, speed time.Duration) 
 			if err := d.setServoPulse(channel, i); err != nil {
 				return err
 			}
-			time.Sleep(speed * time.Nanosecond)
+			time.Sleep(speed * time.Millisecond)
 		}
 	} else {
 		// Move from start to end (in reverse)
@@ -177,7 +177,7 @@ func (d *PCA9685Driver) ServoWrite(channel int, angle int, speed time.Duration) 
 			if err := d.setServoPulse(channel, i); err != nil {
 				return err
 			}
-			time.Sleep(speed * time.Nanosecond)
+			time.Sleep(speed * time.Millisecond)
 		}
 	}
 
