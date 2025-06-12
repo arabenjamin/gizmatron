@@ -43,7 +43,6 @@ type Arm struct {
 	IsOperational bool
 	Name          string
 	driver        *PCA9685Driver
-	pins          []int
 	joints        []*Servo
 	x_max         int
 	y_max         int
@@ -82,7 +81,6 @@ func InitArm() (*Arm, error) {
 
 		driver: arm_driver,
 		Name:   "Gizmatron Arm",
-		pins:   pins,
 		joints: servos,
 		x_max:  20,
 		y_max:  20,
