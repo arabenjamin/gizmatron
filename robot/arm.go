@@ -75,7 +75,7 @@ func InitArm() (*Arm, error) {
 		log.Printf("Could not initialize arm driver: %v", err)
 		return nil, err
 	}
-	defer arm_driver.Close()
+	//defer arm_driver.Close()
 
 	a := &Arm{
 
