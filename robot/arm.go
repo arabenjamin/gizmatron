@@ -98,7 +98,7 @@ func InitArm() (*Arm, error) {
 	a.joints[BASE_SERVO].target_degree = 90
 	a.joints[JOINT_1_SERVO].target_degree = 0
 	a.joints[JOINT_2_SERVO].target_degree = 0
-	a.joints[JOINT_3_SERVO].target_degree = 170
+	a.joints[JOINT_3_SERVO].target_degree = 180
 	a.joints[JOINT_4_SERVO].target_degree = 180
 
 	for _, joint := range a.joints {
