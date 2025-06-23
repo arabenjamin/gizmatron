@@ -150,10 +150,10 @@ func (a *Arm) Start() error {
 	log.Println("Starting Arm...")
 
 	a.joints[BASE_SERVO].target_degree = 90
-	a.joints[JOINT_1_SERVO].target_degree = 45
-	a.joints[JOINT_2_SERVO].target_degree = 45
-	a.joints[JOINT_3_SERVO].target_degree = 135
-	a.joints[JOINT_4_SERVO].target_degree = 150
+	a.joints[JOINT_1_SERVO].target_degree = 30
+	a.joints[JOINT_2_SERVO].target_degree = 30
+	a.joints[JOINT_3_SERVO].target_degree = 120
+	a.joints[JOINT_4_SERVO].target_degree = 130
 
 	err := a.UpdateArm(10)
 	if err != nil {
@@ -171,7 +171,7 @@ func (a *Arm) Stop() error {
 	a.joints[BASE_SERVO].target_degree = 90
 	a.joints[JOINT_1_SERVO].target_degree = 0
 	a.joints[JOINT_2_SERVO].target_degree = 0
-	a.joints[JOINT_3_SERVO].target_degree = 170
+	a.joints[JOINT_3_SERVO].target_degree = 180
 	a.joints[JOINT_4_SERVO].target_degree = 180
 
 	err := a.UpdateArm(10)
