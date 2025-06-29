@@ -328,11 +328,11 @@ func move_arm(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if err := bot.MoveToTarget(requestData.X, requestData.Y, requestData.Z); err != nil {
+	if err := bot.MoveToTarget(requestData.X, requestData.Y, requestData.Z, time.Duration(requestData.Speed)); err != nil {
 		http.Error(resp, "Failed to move arm", http.StatusInternalServerError)
 		return
 	}
-	
+
 	status := fmt.Sprintf("%v current status is Operational: %v \nand Running: %v", bot.Name, bot.IsOperational, bot.IsRunning)
 	thisRequest := map[string]interface{}{
 		"time":           time.Now().Unix(),

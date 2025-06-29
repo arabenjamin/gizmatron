@@ -3,6 +3,7 @@ package robot
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/warthog618/go-gpiocdev"
 )
@@ -199,10 +200,14 @@ func (r *Robot) Stop() (bool, error) {
 	return r.IsRunning, nil
 }
 
-func (r *Robot) MoveToTarget(x, y, z float64) error {
+func (r *Robot) MoveToTarget(x, y, z float64, speed time.Duration) error {
 	if !r.arm.IsOperational {
 		return fmt.Errorf("arm is not operational")
 	}
+
+	r.arm.SetSpeed(speed)
+
+	log.Printf("Moving arm to target position: (%f, %f, %f) with speed: %v", x, y, z, speed)
 
 	if err := r.arm.MoveToTarget(x, y, z); err != nil {
 		return fmt.Errorf("failed to move arm to target position: %v", err)

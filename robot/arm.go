@@ -84,9 +84,9 @@ func InitArm() (*Arm, error) {
 		x_max:  20,
 		y_max:  20,
 		speed:  10,   // default speed of 10ms per degree
-		L1:     10.4, // Length of the first link
+		L1:     10.3, // Length of the first link
 		L2:     2.8,  // Length of the second link (initialize as needed)
-		L3:     10.4, // Length of the third link (initialize as needed)
+		L3:     10.3, // Length of the third link (initialize as needed)
 		jointTargetAngles: [5]int{ // Initial target angles
 			90,  // BASE_SERVO 3.0cm
 			0,   // JOINT_1_SERVO 10.4cm
@@ -95,6 +95,8 @@ func InitArm() (*Arm, error) {
 			180, // JOINT_4_SERVO 2.3cm
 		},
 	}
+
+	// Initialize the driver
 
 	// set the PWM Frequency
 	log.Println("Setting PWM frequency to 50Hz...")
