@@ -158,7 +158,7 @@ func (a *Arm) Start() error {
 		90,  // BASE_SERVO
 		30,  // JOINT_1_SERVO
 		30,  // JOINT_2_SERVO
-		120, // JOINT_3_SERVO
+		130, // JOINT_3_SERVO
 		130, // JOINT_4_SERVO
 	}
 
@@ -240,18 +240,11 @@ func (a *Arm) SolveIK(x, y, z float64) error {
 	}
 
 	baseAngle := baseAngleRad * (180 / math.Pi) // Convert to degrees
+
 	a.jointTargetAngles[JOINT_1_SERVO] = int(baseAngle)
-
-	elbowTwo := 180 - baseAngle // The second elbow is the opposite of the base angle
-	a.jointTargetAngles[JOINT_3_SERVO] = int(elbowTwo)
-
-	elbowOne := baseAngle // should remain parallel to the ground as base angle is adjusted
-	a.jointTargetAngles[JOINT_2_SERVO] = int(elbowOne)
-	// should also be parallel to the ground
-	// The wrist angle is the sum of the elbow angles ?
-	//wristAngle =  180 - (elbowOne + elbowTwo)
-	wristAngle := 180 - elbowOne // The wrist angle is the opposite of the first elbow angle
-	a.jointTargetAngles[JOINT_4_SERVO] = int(wristAngle)
+	a.jointTargetAngles[JOINT_2_SERVO] = int(baseAngle)       // should remain parallel to the ground as base angle is adjusted
+	a.jointTargetAngles[JOINT_3_SERVO] = int(180 - baseAngle) // The second elbow is the opposite of the base angle
+	a.jointTargetAngles[JOINT_4_SERVO] = int(180 - baseAngle) // should also be parallel to the ground
 
 	return nil
 }
