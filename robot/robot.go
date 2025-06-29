@@ -114,6 +114,8 @@ func (r *Robot) initDevices() error {
 		r.Devices["ArmLed"] = &Device{
 			Name:   "ArmLed",
 			Status: "Operational",
+			IsRunning: true,
+			IsOperational: true,
 		}
 
 		armled, armLedErr := NewLedLine(ARM_LED, "Arm LED")

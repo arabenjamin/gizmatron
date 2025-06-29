@@ -2,7 +2,7 @@ package robot
 
 import (
 	"log"
-	_ "math"
+	"math"
 	"time"
 )
 
@@ -28,8 +28,8 @@ import (
 	_0_ _||_ _|0|    Base _0/_/
 
 
-	the distance between the middle servos is 2.8mm
-	the distance between the outter servos and the inner servos is 10.3mm
+	the distance between the middle servos is 2.8cm
+	the distance between the outter servos and the inner servos is 10.4cm
 
 	All of our math will be based on those lengths
 
@@ -47,25 +47,28 @@ type Arm struct {
 	x_max         int
 	y_max         int
 	speed         time.Duration // speed in ms
+	L1			float64 // Length of the first link
+	L2			float64 // Length of the second link
+	L3			float64 // Length of the third link
 }
 
 func InitArm() (*Arm, error) {
 
 
 	var servos []*Servo
-	s0 := NewServo(true, BASE_SERVO, 2.0)
+	s0 := NewServo(true, BASE_SERVO, 3.0)
 	servos = append(servos, s0)
 
-	s1 := NewServo(true, JOINT_1_SERVO, 10.3)
+	s1 := NewServo(true, JOINT_1_SERVO, 10.4)
 	servos = append(servos, s1)
 
 	s2 := NewServo(true, JOINT_2_SERVO, 2.8)
 	servos = append(servos, s2)
 
-	s3 := NewServo(false, JOINT_3_SERVO, 10.3)
+	s3 := NewServo(false, JOINT_3_SERVO, 10.4)
 	servos = append(servos, s3)
 
-	s4 := NewServo(false, JOINT_4_SERVO, 2.0)
+	s4 := NewServo(false, JOINT_4_SERVO, 2.3)
 	servos = append(servos, s4)
 
 
@@ -84,7 +87,11 @@ func InitArm() (*Arm, error) {
 		joints: servos,
 		x_max:  20,
 		y_max:  20,
-		speed:  100,
+		speed:  10 * time.Millisecond, // default speed of 10ms per degree
+		L1:     10.4, // Length of the first link
+		L2:     2.3,  // Length of the second link (initialize as needed)
+		L3:     10.4,  // Length of the third link (initialize as needed)
+	
 	}
 
 	// set the PWM Frequency
@@ -122,12 +129,12 @@ func InitArm() (*Arm, error) {
 }
 
 /* Update servo*/
-func (a *Arm) UpdateArm(speed time.Duration) error {
+func (a *Arm) UpdateArm() error {
 	// Update this servo
 	for _, joint := range a.joints {
 
 		log.Printf("Setting servo %d from %d degrees to %d degrees at %d rate", joint.pin, joint.current_degree, joint.target_degree, speed)
-		if err := a.driver.ServoWrite(int(joint.pin), int(joint.target_degree), speed); err != nil {
+		if err := a.driver.ServoWrite(int(joint.pin), int(joint.target_degree), a.speed); err != nil {
 
 			// TODO: Keep track of servos that fail to move
 			// and return an error at the end of the function
@@ -155,7 +162,7 @@ func (a *Arm) Start() error {
 	a.joints[JOINT_3_SERVO].target_degree = 120
 	a.joints[JOINT_4_SERVO].target_degree = 130
 
-	err := a.UpdateArm(10)
+	err := a.UpdateArm()
 	if err != nil {
 		log.Printf("Failed to start arm: %v", err)
 		return err
@@ -174,7 +181,7 @@ func (a *Arm) Stop() error {
 	a.joints[JOINT_3_SERVO].target_degree = 180
 	a.joints[JOINT_4_SERVO].target_degree = 180
 
-	err := a.UpdateArm(10)
+	err := a.UpdateArm()
 	if err != nil {
 		log.Printf("failed to stop arm: %v", err)
 		return err
@@ -185,3 +192,69 @@ func (a *Arm) Stop() error {
 
 /* TODO: Impliment reset */
 func (a *Arm) Reset() error { return nil }
+
+
+func (a *Arm) SetSpeed(speed time.Duration) {
+	// Set the speed for the arm movements
+	a.speed = speed
+	log.Printf("Arm movement speed set to %v milliseconds", a.speed)
+}
+
+func (a *Arm) MoveToTarget(x,y,z float64) error {
+	
+	// Clean method to move the arm to a target position
+
+	log.Printf("Moving arm to target position: x=%.2f, y=%.2f, z=%.2f", x, y, z)
+	
+	// Solve the Inverse Kinematics for the arm
+	err := a.SolveIK(x,y,z)
+	if err != nil {
+		log.Printf("Error solving IK for ShowHappy: %v", err)
+		return err
+	}
+	
+	// Update the arm with the new angles
+	if err := a.UpdateArm(); err != nil {
+		log.Printf("Error updating arm for ShowHappy: %v", err)
+		return err
+	}
+
+	log.Printf("ShowHappy: Base Angle: %.2f, Elbow One: %.2f, Elbow Two: %.2f, Wrist Angle: %.2f",
+		baseAngle, elbowOne, elbowTwo, wristAngle)
+	
+	return nil
+}
+
+
+
+func (a *Arm) SolveIK(x, y, z float64)  err error {
+
+	// Solve the Inverse Kinematics for the arm
+
+	// For now we'll just assume the base servo is at 90 degrees
+	// I'll solve for that later
+	a.joints[BASE_SERVO].target_degree = 90
+
+	// Calculate the base angle in radians the height should be half our z value
+	baseAngleRad := math.Arcsin((z/2.0) / a.L1) 
+	if math.IsNaN(baseAngleRad) {
+		log.Printf("Error calculating base angle: %v", err)
+		return 0, 0, 0, 0, err
+	}
+	baseAngle = baseAngleRad * (180 / math.Pi) // Convert to degrees
+	a.joints[JOINT_1_SERVO].target_degree = baseAngle
+
+	elbowTwo = 180 - baseAngle // The second elbow is the opposite of the base angle
+    a.joints[JOINT_3_SERVO].target_degree = elbowTwo
+
+	elbowOne = baseAngle  // should remain parallel to the ground as base angle is adjusted
+	a.joints[JOINT_2_SERVO].target_degree = elbowOne
+
+	// should also be parallel to the ground
+	// The wrist angle is the sum of the elbow angles ?
+	//wristAngle =  180 - (elbowOne + elbowTwo) 
+	wristAngle = 180 - elbowOne // The wrist angle is the opposite of the first elbow angle	 
+	a.joints[JOINT_4_SERVO].target_degree = wristAngle
+
+	return nil
+}
