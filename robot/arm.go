@@ -227,7 +227,7 @@ func (a *Arm) MoveToTarget(x,y,z float64) error {
 
 
 
-func (a *Arm) SolveIK(x, y, z float64)  err error {
+func (a *Arm) SolveIK(x, y, z float64)  error {
 
 	// Solve the Inverse Kinematics for the arm
 
