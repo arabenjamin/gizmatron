@@ -8,14 +8,10 @@ import (
 )
 
 const (
-	RUNNING_LED   = 37 //gpio 26 pin 37
-	SEVER_LED     = 13 //gpio 13 pin 33
-	ARM_LED       = 5  //gpio 05 pin 29
-	BASE_SERVO    = 0
-	JOINT_1_SERVO = 1
-	JOINT_2_SERVO = 2
-	JOINT_3_SERVO = 3
-	JOINT_4_SERVO = 4
+	RUNNING_LED = 37 //gpio 26 pin 37
+	SEVER_LED   = 13 //gpio 13 pin 33
+	ARM_LED     = 5  //gpio 05 pin 29
+
 )
 
 type Device struct {
@@ -112,9 +108,9 @@ func (r *Robot) initDevices() error {
 
 	if arm.IsOperational {
 		r.Devices["ArmLed"] = &Device{
-			Name:   "ArmLed",
-			Status: "Operational",
-			IsRunning: true,
+			Name:          "ArmLed",
+			Status:        "Operational",
+			IsRunning:     true,
 			IsOperational: true,
 		}
 
@@ -214,6 +210,5 @@ func (r *Robot) MoveToTarget(x, y, z float64) error {
 
 	return nil
 }
-
 
 func (r *Robot) Reset() error { return nil }

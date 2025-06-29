@@ -37,39 +37,37 @@ import (
 
 */
 
+const (
+	BASE_SERVO    = 0
+	JOINT_1_SERVO = 1
+	JOINT_2_SERVO = 2
+	JOINT_3_SERVO = 3
+	JOINT_4_SERVO = 4
+)
+
+type cords struct {
+	x float64
+	y float64
+	z float64
+}
+
 type Arm struct {
-	err           error
-	State         bool
-	IsRunning     bool
-	IsOperational bool
-	Name          string
-	driver        *PCA9685Driver
-	joints        []*Servo
-	x_max         int
-	y_max         int
-	speed         time.Duration // speed in ms
-	L1            float64       // Length of the first link
-	L2            float64       // Length of the second link
-	L3            float64       // Length of the third link
+	err               error
+	State             bool
+	IsRunning         bool
+	IsOperational     bool
+	Name              string
+	driver            *PCA9685Driver
+	x_max             int
+	y_max             int
+	speed             time.Duration // speed in ms
+	L1                float64       // Length of the first link
+	L2                float64       // Length of the second link
+	L3                float64       // Length of the third link
+	jointTargetAngles [5]int        // Target degrees for each joint
 }
 
 func InitArm() (*Arm, error) {
-
-	var servos []*Servo
-	s0 := NewServo(true, BASE_SERVO, 3.0)
-	servos = append(servos, s0)
-
-	s1 := NewServo(true, JOINT_1_SERVO, 10.4)
-	servos = append(servos, s1)
-
-	s2 := NewServo(true, JOINT_2_SERVO, 2.8)
-	servos = append(servos, s2)
-
-	s3 := NewServo(false, JOINT_3_SERVO, 10.4)
-	servos = append(servos, s3)
-
-	s4 := NewServo(false, JOINT_4_SERVO, 2.3)
-	servos = append(servos, s4)
 
 	// TODO: The driver should be part of the servo struct
 	arm_driver, err := NewPCA9685Driver()
@@ -83,43 +81,37 @@ func InitArm() (*Arm, error) {
 
 		Name:   "Gizmatron Arm",
 		driver: arm_driver,
-		joints: servos,
 		x_max:  20,
 		y_max:  20,
-		speed:  10 * time.Millisecond, // default speed of 10ms per degree
-		L1:     10.4,                  // Length of the first link
-		L2:     2.3,                   // Length of the second link (initialize as needed)
-		L3:     10.4,                  // Length of the third link (initialize as needed)
-
+		speed:  10,   // default speed of 10ms per degree
+		L1:     10.4, // Length of the first link
+		L2:     2.8,  // Length of the second link (initialize as needed)
+		L3:     10.4, // Length of the third link (initialize as needed)
+		jointTargetAngles: [5]int{ // Initial target angles
+			90,  // BASE_SERVO 3.0cm
+			0,   // JOINT_1_SERVO 10.4cm
+			0,   // JOINT_2_SERVO 2.8cm
+			180, // JOINT_3_SERVO 10.4cm
+			180, // JOINT_4_SERVO 2.3cm
+		},
 	}
 
 	// set the PWM Frequency
-	//a.driver.SetPWMFreq(50)
 	log.Println("Setting PWM frequency to 50Hz...")
 	if err := a.driver.SetPWMFreq(50); err != nil {
 		log.Fatalf("Could not set PWM frequency: %v", err)
 	}
 
-	// Set initial angles for servos
-	a.joints[BASE_SERVO].target_degree = 90
-	a.joints[JOINT_1_SERVO].target_degree = 0
-	a.joints[JOINT_2_SERVO].target_degree = 0
-	a.joints[JOINT_3_SERVO].target_degree = 180
-	a.joints[JOINT_4_SERVO].target_degree = 180
-
-	for _, joint := range a.joints {
-		log.Printf("Setting initial angle for servo %d to %d degrees", joint.pin, joint.target_degree)
-		if err := a.driver.setServoPulse(joint.pin, int(joint.target_degree)); err != nil {
-			log.Printf("Error setting initial servo position: %v\n", err)
+	for i, degree := range a.jointTargetAngles {
+		if err := a.driver.setServoPulse(i, degree); err != nil {
+			log.Printf("Error setting initial servo position for servo %d: %v\n", i, err)
 		}
-		//time.Sleep(time.Duration(1000*100) * time.Nanosecond)
+		// setServoPulse will not update the current angles,
+		// so we need to manually set them here.
+		// This is important for the first run to ensure the arm starts at the correct position.
+		log.Printf("Setting initial angle for servo %d to %d degrees", i, degree)
+		a.driver.currentAngles[i] = degree // Initialize current angles
 	}
-
-	a.driver.currentAngles[BASE_SERVO] = int(a.joints[BASE_SERVO].target_degree)
-	a.driver.currentAngles[JOINT_1_SERVO] = int(a.joints[JOINT_1_SERVO].target_degree)
-	a.driver.currentAngles[JOINT_2_SERVO] = int(a.joints[JOINT_2_SERVO].target_degree)
-	a.driver.currentAngles[JOINT_3_SERVO] = int(a.joints[JOINT_3_SERVO].target_degree)
-	a.driver.currentAngles[JOINT_4_SERVO] = int(a.joints[JOINT_4_SERVO].target_degree)
 
 	log.Println("Arm Position: ", a.driver.currentAngles)
 	a.State = true
@@ -136,10 +128,10 @@ func (a *Arm) SetSpeed(speed time.Duration) {
 /* Update servo*/
 func (a *Arm) UpdateArm() error {
 	// Update this servo
-	for _, joint := range a.joints {
+	for i, degree := range a.jointTargetAngles {
 
-		log.Printf("Setting servo %d from %d degrees to %d degrees at %d rate", joint.pin, joint.current_degree, joint.target_degree, a.speed)
-		if err := a.driver.ServoWrite(int(joint.pin), int(joint.target_degree), a.speed); err != nil {
+		log.Printf("Setting servo %d from %d degrees to %d degrees at %d rate", i, a.driver.currentAngles[i], degree, a.speed)
+		if err := a.driver.ServoWrite(i, int(degree), a.speed); err != nil {
 
 			// TODO: Keep track of servos that fail to move
 			// and return an error at the end of the function
@@ -147,8 +139,7 @@ func (a *Arm) UpdateArm() error {
 			log.Printf("Error! moving servo: %v\n", err)
 			return err
 		}
-		joint.current_degree = joint.target_degree
-		log.Printf("Joint %d current degree: %d", joint.pin, joint.current_degree)
+		log.Printf("Joint %d current degree: %d", i, a.driver.currentAngles[i])
 		//time.Sleep(time.Duration(1000*speed) * time.Nanosecond)
 
 	}
@@ -161,11 +152,13 @@ func (a *Arm) Start() error {
 
 	log.Println("Starting Arm...")
 
-	a.joints[BASE_SERVO].target_degree = 90
-	a.joints[JOINT_1_SERVO].target_degree = 30
-	a.joints[JOINT_2_SERVO].target_degree = 30
-	a.joints[JOINT_3_SERVO].target_degree = 120
-	a.joints[JOINT_4_SERVO].target_degree = 130
+	a.jointTargetAngles = [5]int{
+		90,  // BASE_SERVO
+		30,  // JOINT_1_SERVO
+		30,  // JOINT_2_SERVO
+		120, // JOINT_3_SERVO
+		130, // JOINT_4_SERVO
+	}
 
 	err := a.UpdateArm()
 	if err != nil {
@@ -180,12 +173,19 @@ func (a *Arm) Start() error {
 /* Put Arm in Stop Position */
 func (a *Arm) Stop() error {
 
-	a.joints[BASE_SERVO].target_degree = 90
-	a.joints[JOINT_1_SERVO].target_degree = 0
-	a.joints[JOINT_2_SERVO].target_degree = 0
-	a.joints[JOINT_3_SERVO].target_degree = 180
-	a.joints[JOINT_4_SERVO].target_degree = 180
+	log.Println("Stopping Arm...")
 
+	// Set the arm to a default position
+	// This is the position we want the arm to be in when it is not running
+	// It should be a safe position that does not interfere with any objects
+	// or cause any damage to the arm or the environment
+	a.jointTargetAngles = [5]int{
+		90,  // BASE_SERVO
+		0,   // JOINT_1_SERVO
+		0,   // JOINT_2_SERVO
+		180, // JOINT_3_SERVO
+		180, // JOINT_4_SERVO
+	}
 	err := a.UpdateArm()
 	if err != nil {
 		log.Printf("failed to stop arm: %v", err)
@@ -227,7 +227,7 @@ func (a *Arm) SolveIK(x, y, z float64) error {
 
 	// For now we'll just assume the base servo is at 90 degrees
 	// I'll solve for that later
-	a.joints[BASE_SERVO].target_degree = 90
+	a.jointTargetAngles[BASE_SERVO] = 90 // Set the base servo to 90 degrees
 
 	// Calculate the base angle in radians the height should be half our z value
 	baseAngleRad := math.Asin((z / 2.0) / a.L1)
@@ -238,19 +238,18 @@ func (a *Arm) SolveIK(x, y, z float64) error {
 	}
 
 	baseAngle := baseAngleRad * (180 / math.Pi) // Convert to degrees
-	a.joints[JOINT_1_SERVO].target_degree = baseAngle
+	a.jointTargetAngles[JOINT_1_SERVO] = int(baseAngle)
 
 	elbowTwo := 180 - baseAngle // The second elbow is the opposite of the base angle
-	a.joints[JOINT_3_SERVO].target_degree = elbowTwo
+	a.jointTargetAngles[JOINT_3_SERVO] = int(elbowTwo)
 
 	elbowOne := baseAngle // should remain parallel to the ground as base angle is adjusted
-	a.joints[JOINT_2_SERVO].target_degree = elbowOne
-
+	a.jointTargetAngles[JOINT_2_SERVO] = int(elbowOne)
 	// should also be parallel to the ground
 	// The wrist angle is the sum of the elbow angles ?
 	//wristAngle =  180 - (elbowOne + elbowTwo)
 	wristAngle := 180 - elbowOne // The wrist angle is the opposite of the first elbow angle
-	a.joints[JOINT_4_SERVO].target_degree = wristAngle
+	a.jointTargetAngles[JOINT_4_SERVO] = int(wristAngle)
 
 	return nil
 }
