@@ -203,4 +203,17 @@ func (r *Robot) Stop() (bool, error) {
 	return r.IsRunning, nil
 }
 
+func (r *Robot) MoveToTarget(x, y, z float64) error {
+	if !r.arm.IsOperational {
+		return fmt.Errorf("arm is not operational")
+	}
+
+	if err := r.arm.MoveToTarget(x, y, z); err != nil {
+		return fmt.Errorf("failed to move arm to target position: %v", err)
+	}
+
+	return nil
+}
+
+
 func (r *Robot) Reset() error { return nil }

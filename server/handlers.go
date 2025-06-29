@@ -303,6 +303,56 @@ func stop_bot(resp http.ResponseWriter, req *http.Request) {
 	respond(resp, thisResponse)
 }
 
+func move_arm(resp http.ResponseWriter, req *http.Request) {
+	bot := req.Context().Value("bot").(*robot.Robot)
+
+	if req.Method != http.MethodPost {
+		http.Error(resp, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var requestData struct {
+		X     float64 `json:"x"`
+		Y     float64 `json:"y"`
+		Z     float64 `json:"z"`
+		Speed int     `json:"speed"`
+	}
+
+	if err := json.NewDecoder(req.Body).Decode(&requestData); err != nil {
+		http.Error(resp, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if !bot.IsOperational || !bot.IsRunning {
+		http.Error(resp, "Robot is not operational or not running", http.StatusServiceUnavailable)
+		return
+	}
+
+	if err := bot.MoveToTarget(requestData.X, requestData.Y, requestData.Z); err != nil {
+		http.Error(resp, "Failed to move arm", http.StatusInternalServerError)
+		return
+	}
+	
+	status := fmt.Sprintf("%v current status is Operational: %v \nand Running: %v", bot.Name, bot.IsOperational, bot.IsRunning)
+	thisRequest := map[string]interface{}{
+		"time":           time.Now().Unix(),
+		"client_address": req.RemoteAddr,
+		"resource":       req.URL.Path,
+		"user_agent":     req.Header["User-Agent"],
+		"client":         clientHash(req),
+	}
+
+	thisResponse := map[string]interface{}{
+		"status":        status,
+		"device_status": bot.Devices,
+		"botname":       bot.Name,
+		"this_request":  thisRequest,
+	}
+
+	//logReq(req)
+	respond(resp, thisResponse)
+}
+
 func take_picture(resp http.ResponseWriter, req *http.Request) {
 
 	bot := req.Context().Value("bot").(*robot.Robot)
