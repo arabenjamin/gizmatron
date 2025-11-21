@@ -1,0 +1,99 @@
+# Docker Compose configuration with enhanced camera support
+version: '3.8'
+
+services:
+  gizmatron:
+    build: 
+      context: .
+      dockerfile: Dockerfile.libcamera
+    image: gizmatron:libcamera
+    container_name: gizmatron-libcamera
+    ports:
+      - "8080:8080"
+    devices:
+      # Camera devices
+      - "/dev/video0:/dev/video0"
+      - "/dev/video1:/dev/video1"  # Additional camera support
+      # I2C for servo control
+      - "/dev/i2c-1:/dev/i2c-1"
+      # GPIO memory access
+      - "/dev/gpiomem:/dev/gpiomem"
+      # Additional hardware access
+      - "/dev/vchiq:/dev/vchiq"     # VideoCore interface
+      - "/dev/vcsm-cma:/dev/vcsm-cma" # VideoCore memory
+    volumes:
+      # Camera and GPU access
+      - "/opt/vc:/opt/vc:ro"        # VideoCore libraries
+      - "/usr/lib/aarch64-linux-gnu/libmmal.so:/usr/lib/aarch64-linux-gnu/libmmal.so:ro"
+      - "/usr/lib/aarch64-linux-gnu/libmmal_core.so:/usr/lib/aarch64-linux-gnu/libmmal_core.so:ro"
+      - "/usr/lib/aarch64-linux-gnu/libmmal_util.so:/usr/lib/aarch64-linux-gnu/libmmal_util.so:ro"
+      # libcamera configuration
+      - "/usr/share/libcamera:/usr/share/libcamera:ro"
+      # Application data persistence
+      - "./data:/app/data"
+      - "./logs:/app/logs"
+    environment:
+      # Camera configuration
+      - GIZMATRON_CAMERA_WIDTH=640
+      - GIZMATRON_CAMERA_HEIGHT=480
+      - GIZMATRON_CAMERA_FPS=30
+      - GIZMATRON_CAMERA_BACKEND=auto  # auto, libcamera, v4l2, gstreamer
+      # Hardware configuration
+      - GIZMATRON_I2C_BUS=1
+      - GIZMATRON_SERVO_FREQ=50
+      # Logging
+      - GIZMATRON_LOG_LEVEL=info
+      # GPU memory split
+      - LD_LIBRARY_PATH=/opt/vc/lib:/usr/local/lib
+    privileged: true  # Required for hardware access
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Twingate connector for remote access
+  twingate-connector:
+    image: twingate/connector:latest
+    container_name: gizmatron-twingate
+    environment:
+      - TWINGATE_NETWORK=${TWINGATE_NETWORK}
+      - TWINGATE_ACCESS_TOKEN=${TWINGATE_ACCESS_TOKEN}
+      - TWINGATE_REFRESH_TOKEN=${TWINGATE_REFRESH_TOKEN}
+    restart: unless-stopped
+    depends_on:
+      - gizmatron
+    profiles:
+      - remote-access  # Use: docker-compose --profile remote-access up
+
+  # Optional: Development tools container
+  gizmatron-dev:
+    build: 
+      context: .
+      dockerfile: Dockerfile.libcamera
+      target: base  # Use base stage for development
+    container_name: gizmatron-dev
+    volumes:
+      - ".:/app"
+      - "/dev:/dev"
+      - "/opt/vc:/opt/vc:ro"
+    devices:
+      - "/dev/video0:/dev/video0"
+      - "/dev/i2c-1:/dev/i2c-1"
+      - "/dev/gpiomem:/dev/gpiomem"
+    environment:
+      - CGO_ENABLED=1
+      - GIZMATRON_LOG_LEVEL=debug
+    privileged: true
+    working_dir: /app
+    command: ["sleep", "infinity"]  # Keep container running for development
+    profiles:
+      - development  # Use: docker-compose --profile development up
+
+volumes:
+  gizmatron-data:
+    driver: local
+  gizmatron-logs:
+    driver: local

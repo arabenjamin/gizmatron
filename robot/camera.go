@@ -281,7 +281,7 @@ func (c *Cam) TakePicture() {
 		var err error
 		c.Webcam, err = gocv.OpenVideoCapture(0)
 		if err != nil {
-			fmt.Println("Error opeing webcam\n")
+			fmt.Println("Error opening webcam")
 			return
 
 		}
