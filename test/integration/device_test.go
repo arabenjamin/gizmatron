@@ -16,10 +16,10 @@ type BotStatusResponse struct {
 }
 
 type DeviceInfo struct {
-	Name         string `json:"name"`
-	DeviceType   string `json:"device_type"`
-	IsOperational bool  `json:"isoperational"`
-	IsRunning    bool   `json:"isrunning"`
+	Name          string `json:"name"`
+	DeviceType    string `json:"device_type"`
+	IsOperational bool   `json:"isoperational"`
+	IsRunning     bool   `json:"isrunning"`
 }
 
 // TestDeviceInitialization verifies all hardware devices are initialized
