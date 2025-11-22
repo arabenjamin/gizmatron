@@ -17,6 +17,23 @@ services:
     restart: unless-stopped
     # sudo docker run -d --privileged --device /dev/i2c-1 --device /dev/video0:/dev/video0 -p 8080:8080 gizmatron:latest
 
+  # GitHub Actions Self-Hosted Runner
+  github-runner:
+    image: myoung34/github-runner:latest
+    container_name: gizmatron-runner
+    environment:
+      - RUNNER_NAME=gizmatron-pi
+      - RUNNER_WORKDIR=/tmp/runner
+      - RUNNER_SCOPE=repo
+      - REPO_URL=https://github.com/arabenjamin/gizmatron
+      - ACCESS_TOKEN=${GITHUB_RUNNER_TOKEN}
+      - LABELS=self-hosted,Linux,ARM64,raspberry-pi
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/runner:/tmp/runner
+    restart: unless-stopped
+    privileged: true
+
   # https://www.twingate.com/docs/deploy-connector-with-docker-compose
   twingate-connector:
     image: twingate/connector:latest
