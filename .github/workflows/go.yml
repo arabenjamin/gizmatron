@@ -62,7 +62,9 @@ jobs:
           # Verify image was created
           docker images gizmatron:latest
           # Quick sanity check that image has expected files
-          docker run --rm gizmatron:latest ls -la /app
+          docker run --rm gizmatron:latest ls -la
+          # Verify the gizmatron binary exists
+          docker run --rm gizmatron:latest test -f ./gizmatron && echo "✓ Binary found"
 
   # Stage 3: Deploy to Raspberry Pi
   deploy:
