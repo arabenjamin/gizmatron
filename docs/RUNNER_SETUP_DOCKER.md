@@ -1,153 +1,339 @@
-# GitHub Actions Runner Setup (Docker Compose)
+# GitHub Actions Runner Setup (Native Installation)
 
-This guide shows how to run the GitHub Actions self-hosted runner using Docker Compose alongside gizmatron.
+This guide shows how to install the GitHub Actions self-hosted runner natively on the Raspberry Pi.
 
-## Prerequisites
+**Why Native Installation?**
+- ✅ Official GitHub approach (fully supported)
+- ✅ Better security (no Docker-in-Docker)
+- ✅ Simpler troubleshooting
+- ✅ Direct hardware access for robotics
+- ✅ Lower overhead
 
-- Raspberry Pi with Docker and Docker Compose installed
-- GitHub Personal Access Token (PAT)
+## Quick Start (Automated Setup)
 
-## Step 1: Create GitHub Personal Access Token
+SSH into your Raspberry Pi and run:
 
-1. Go to: https://github.com/settings/tokens/new
-2. Token name: `gizmatron-runner`
-3. Select scopes:
-   - ✅ **repo** (Full control of private repositories)
-4. Click "Generate token"
-5. **Copy the token** (you won't see it again!)
-
-## Step 2: Set Up Environment Variables on Pi
-
-SSH into your Raspberry Pi:
 ```bash
 ssh ara@192.168.0.37
 cd ~/gizmatron
+git pull
+./scripts/setup-github-runner.sh
 ```
 
-Create `.env` file from template:
+The script will:
+1. ✓ Check system compatibility
+2. ✓ Install dependencies (Go, git, etc.)
+3. ✓ Download the latest runner
+4. ✓ Register with GitHub
+5. ✓ Install as systemd service
+6. ✓ Start the runner
+
+## Prerequisites
+
+Before running the setup script:
+
+### 1. Create GitHub Personal Access Token
+
+1. Go to: https://github.com/settings/tokens/new
+2. Token name: `gizmatron-runner`
+3. Expiration: 90 days (or No expiration)
+4. Select scopes:
+   - ✅ **repo** (Full control of private repositories)
+5. Click "Generate token"
+6. **Copy the token** - it starts with `ghp_` and you won't see it again!
+
+Keep this token ready - the setup script will ask for it.
+
+## Manual Installation (If Needed)
+
+If the automated script doesn't work, follow these steps:
+
+### Step 1: Install Dependencies
+
 ```bash
-cp .env.example .env
-nano .env
+sudo apt-get update
+sudo apt-get install -y curl jq git
 ```
 
-Edit the file and add your token:
+### Step 2: Download Runner
+
 ```bash
-GITHUB_RUNNER_TOKEN=ghp_YOUR_ACTUAL_TOKEN_HERE
+# Create runner directory
+mkdir -p ~/actions-runner && cd ~/actions-runner
+
+# Download latest runner for ARM64
+curl -o actions-runner-linux-arm64-2.311.0.tar.gz -L \
+  https://github.com/actions/runner/releases/download/v2.311.0/actions-runner-linux-arm64-2.311.0.tar.gz
+
+# Extract
+tar xzf ./actions-runner-linux-arm64-2.311.0.tar.gz
 ```
 
-Save and exit (Ctrl+X, Y, Enter).
-
-## Step 3: Start the Runner
+### Step 3: Configure Runner
 
 ```bash
-docker compose up -d github-runner
+./config.sh \
+  --url https://github.com/arabenjamin/gizmatron \
+  --token YOUR_GITHUB_TOKEN \
+  --name gizmatron-pi \
+  --labels self-hosted,Linux,ARM64,raspberry-pi \
+  --work _work \
+  --unattended \
+  --replace
 ```
 
-## Step 4: Verify Runner is Connected
+### Step 4: Install as Service
 
-Check the logs:
 ```bash
-docker compose logs -f github-runner
+# Install service
+sudo ./svc.sh install
+
+# Start service
+sudo ./svc.sh start
+
+# Check status
+sudo ./svc.sh status
+```
+
+## Verify Installation
+
+### Check Service Status
+
+```bash
+cd ~/actions-runner
+sudo ./svc.sh status
 ```
 
 You should see:
 ```
-✓ Runner successfully added
-✓ Connected to GitHub
+● actions.runner.arabenjamin-gizmatron.gizmatron-pi.service
+   Active: active (running)
 ```
 
-Verify on GitHub:
+### View Logs
+
+```bash
+# Real-time logs
+sudo journalctl -u actions.runner.* -f
+
+# Last 50 lines
+sudo journalctl -u actions.runner.* -n 50
+```
+
+### Check on GitHub
+
 1. Go to: https://github.com/arabenjamin/gizmatron/settings/actions/runners
-2. You should see **gizmatron-pi** with a green "Idle" status
+2. You should see **gizmatron-pi** with:
+   - ✅ Green "Idle" status
+   - Labels: self-hosted, Linux, ARM64, raspberry-pi
 
 ## Managing the Runner
 
-**View logs:**
+### Service Commands
+
 ```bash
-docker compose logs -f github-runner
+cd ~/actions-runner
+
+# Start
+sudo ./svc.sh start
+
+# Stop
+sudo ./svc.sh stop
+
+# Restart
+sudo ./svc.sh restart
+
+# Status
+sudo ./svc.sh status
+
+# Uninstall
+sudo ./svc.sh uninstall
 ```
 
-**Restart runner:**
+### Update Runner
+
 ```bash
-docker compose restart github-runner
+cd ~/actions-runner
+
+# Stop service
+sudo ./svc.sh stop
+
+# Download new version
+# (Check https://github.com/actions/runner/releases)
+curl -o actions-runner-linux-arm64-VERSION.tar.gz -L \
+  https://github.com/actions/runner/releases/download/vVERSION/actions-runner-linux-arm64-VERSION.tar.gz
+
+# Extract (overwrites old files)
+tar xzf ./actions-runner-linux-arm64-VERSION.tar.gz
+
+# Restart service
+sudo ./svc.sh start
 ```
 
-**Stop runner:**
+### Remove Runner
+
 ```bash
-docker compose stop github-runner
+cd ~/actions-runner
+
+# Stop and uninstall
+sudo ./svc.sh stop
+sudo ./svc.sh uninstall
+
+# Remove directory
+cd ~
+rm -rf actions-runner
 ```
 
-**Remove runner:**
-```bash
-docker compose down github-runner
-```
-
-## Running the Full Stack
-
-To run gizmatron and the runner together:
-```bash
-docker compose up -d
-```
-
-This starts:
-- **gizmatron** - Main robotics service
-- **github-runner** - CI/CD runner
-- **twingate-connector** - VPN (if configured)
+Then remove it from GitHub:
+https://github.com/arabenjamin/gizmatron/settings/actions/runners
 
 ## Troubleshooting
 
-### Runner shows "Offline"
+### Runner shows "Offline" on GitHub
+
 ```bash
-# Check if container is running
-docker compose ps
+# Check if service is running
+sudo systemctl status actions.runner.*
+
+# Restart service
+cd ~/actions-runner
+sudo ./svc.sh restart
 
 # Check logs for errors
-docker compose logs github-runner
-
-# Restart the runner
-docker compose restart github-runner
+sudo journalctl -u actions.runner.* -n 100
 ```
 
-### "Permission denied" errors in pipeline
+### "Permission denied" accessing Docker
+
 ```bash
-# Ensure the runner user has Docker access
-# The runner container already has /var/run/docker.sock mounted
-# Check if it can run Docker:
-docker compose exec github-runner docker ps
+# Verify user is in docker group
+groups
+
+# If not, add user to docker group
+sudo usermod -aG docker $USER
+
+# Log out and back in for changes to take effect
+```
+
+### "Permission denied" accessing hardware (I2C, GPIO)
+
+```bash
+# Add user to hardware groups
+sudo usermod -aG i2c,gpio,video $USER
+
+# Log out and back in
+```
+
+### Runner keeps crashing
+
+```bash
+# Check system resources
+free -h
+df -h
+
+# Check logs for errors
+sudo journalctl -u actions.runner.* -n 200
+
+# Try running manually to see errors
+cd ~/actions-runner
+./run.sh
 ```
 
 ### Token expired
-1. Generate a new PAT (Step 1)
-2. Update `.env` file
-3. Restart: `docker compose restart github-runner`
+
+If you see "HTTP 401 Unauthorized":
+
+1. Generate a new token (same as Step 1 above)
+2. Reconfigure runner:
+```bash
+cd ~/actions-runner
+sudo ./svc.sh stop
+./config.sh remove --token OLD_TOKEN
+./config.sh --url https://github.com/arabenjamin/gizmatron --token NEW_TOKEN --name gizmatron-pi --unattended
+sudo ./svc.sh start
+```
+
+## Security Best Practices
+
+1. **Token Management**
+   - Use tokens with minimal scope (repo only)
+   - Set expiration dates (90 days)
+   - Rotate tokens regularly
+   - Never commit tokens to git
+
+2. **Runner Security**
+   - Only run on trusted networks or behind VPN (Twingate)
+   - Keep Pi OS updated: `sudo apt-get update && sudo apt-get upgrade`
+   - Monitor runner logs for suspicious activity
+   - The runner has full access to your repository code
+
+3. **Network Security**
+   - Use Twingate VPN for remote access
+   - Don't expose runner to internet directly
+   - Consider firewall rules: `sudo ufw status`
 
 ## How It Works
 
-The runner container:
-- Uses `myoung34/github-runner:latest` image (ARM64 compatible)
-- Mounts Docker socket for running CI/CD jobs
-- Registers with GitHub automatically using your PAT
-- Has privileged access for hardware interaction
-- Automatically restarts if it crashes
+### Pipeline Flow
 
-## Security Notes
+1. You push code to GitHub
+2. GitHub Actions triggers workflow
+3. Jobs with `runs-on: self-hosted` are assigned to your runner
+4. Runner on Pi:
+   - Checks out code
+   - Runs build steps
+   - Executes tests
+   - Has access to real hardware (I2C, GPIO, camera)
+   - Reports results back to GitHub
 
-- ⚠️ Never commit `.env` file (already in `.gitignore`)
-- ⚠️ Use a token with minimal scope (repo only)
-- ⚠️ Rotate token periodically
-- ⚠️ The runner has Docker access (can run containers)
-- ⚠️ Only run on trusted, private networks or behind VPN
+### Directory Structure
 
-## Pipeline Flow
+```
+~/actions-runner/
+├── config.sh           # Configuration script
+├── run.sh             # Run runner manually
+├── svc.sh             # Service management
+├── bin/               # Runner binaries
+├── externals/         # Dependencies
+└── _work/             # Job workspace
+    └── gizmatron/     # Your repo (during jobs)
+```
 
-Once the runner is set up:
-1. Push code to GitHub
-2. GitHub Actions triggers
-3. Jobs that require `runs-on: self-hosted` execute on your Pi
-4. Runner builds, deploys, and tests on actual hardware
-5. Results reported back to GitHub
+### Service Details
+
+- **Service Name**: `actions.runner.arabenjamin-gizmatron.gizmatron-pi.service`
+- **User**: Runs as your user (e.g., `ara`)
+- **Auto-start**: Starts on boot
+- **Restart**: Automatically restarts if it crashes
+
+## Testing the Pipeline
+
+After setup, test the complete pipeline:
+
+1. Make a small change to code:
+```bash
+cd ~/gizmatron
+echo "# Test" >> README.md
+git add README.md
+git commit -S -m "Test CI/CD pipeline"
+git push origin main
+```
+
+2. Watch on GitHub:
+   - https://github.com/arabenjamin/gizmatron/actions
+   - You should see the workflow run through all stages
+
+3. Monitor on Pi:
+```bash
+# Watch runner logs
+sudo journalctl -u actions.runner.* -f
+
+# Or watch job execution
+watch -n 1 'ls -la ~/actions-runner/_work/gizmatron/gizmatron/'
+```
 
 ## Resources
 
-- [GitHub Self-Hosted Runners Docs](https://docs.github.com/en/actions/hosting-your-own-runners)
-- [myoung34/github-runner Image](https://github.com/myoung34/docker-github-actions-runner)
+- [GitHub Self-Hosted Runners Documentation](https://docs.github.com/en/actions/hosting-your-own-runners)
+- [Runner Releases](https://github.com/actions/runner/releases)
+- [Self-Hosted Runner Security](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/about-self-hosted-runners#self-hosted-runner-security)
