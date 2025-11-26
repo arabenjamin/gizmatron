@@ -18,7 +18,22 @@ ENV PATH /go/bin:$PATH
 RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
 #RUN sudo modprobe bcm2835-v4l2
 
-RUN apt-get update && apt-get install -y git gcc libc-dev i2c-tools
+# Install dependencies including GStreamer and libcamera for camera support
+RUN apt-get update && apt-get install -y \
+    git \
+    gcc \
+    libc-dev \
+    i2c-tools \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    libcamera-dev \
+    libcamera-tools \
+    v4l-utils \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/arabenjamin/gizmatron.git
 
