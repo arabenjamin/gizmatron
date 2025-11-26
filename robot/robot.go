@@ -107,7 +107,8 @@ func (r *Robot) initDevices() error {
 	}
 	r.arm = arm
 
-	if arm.IsOperational {
+	// Only configure arm peripherals if arm initialized successfully
+	if arm != nil && arm.IsOperational {
 		r.Devices["ArmLed"] = &Device{
 			Name:          "ArmLed",
 			Status:        "Operational",
@@ -158,7 +159,7 @@ func (r *Robot) Start() (bool, error) {
 
 	log.Println("Starting Arm and Camera...")
 
-	if r.arm.IsOperational {
+	if r.arm != nil && r.arm.IsOperational {
 		r.armled.SetValue(1)
 		if ok := r.arm.Start(); ok != nil {
 			errMsg := fmt.Sprintf("Error Failed to move arm to starting position :%v", ok)
@@ -183,7 +184,7 @@ func (r *Robot) Start() (bool, error) {
 func (r *Robot) Stop() (bool, error) {
 	log.Println("Stoping Arm and Camera")
 
-	if r.arm.IsOperational {
+	if r.arm != nil && r.arm.IsOperational {
 		r.armled.SetValue(0)
 		if ok := r.arm.Stop(); ok != nil {
 			errMsg := fmt.Sprintf("Error Faild to return arm to default positon:%v", ok)
@@ -201,7 +202,7 @@ func (r *Robot) Stop() (bool, error) {
 }
 
 func (r *Robot) MoveToTarget(x, y, z float64, speed time.Duration) error {
-	if !r.arm.IsOperational {
+	if r.arm == nil || !r.arm.IsOperational {
 		return fmt.Errorf("arm is not operational")
 	}
 
