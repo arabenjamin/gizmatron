@@ -84,35 +84,29 @@ if [ -d "$RUNNER_DIR" ]; then
     fi
 fi
 
-# Install dependencies
+# Check Docker installation
 echo ""
-echo "📦 Installing dependencies..."
+echo "📦 Checking dependencies..."
+
+if ! command -v docker &> /dev/null; then
+    echo -e "${RED}❌ Docker is not installed${NC}"
+    echo ""
+    echo "Please install Docker first:"
+    echo "  curl -fsSL https://get.docker.com -o get-docker.sh"
+    echo "  sudo sh get-docker.sh"
+    echo "  sudo usermod -aG docker \$USER"
+    echo ""
+    exit 1
+else
+    echo "✓ Docker installed: $(docker --version)"
+fi
+
+# Install basic dependencies
+echo "📦 Installing required tools..."
 sudo apt-get update -qq
 sudo apt-get install -y curl jq git
 
-# Install Go if not present
-if ! command -v go &> /dev/null; then
-    echo "📦 Installing Go..."
-    GO_VERSION="1.23.5"
-    if [[ "$RUNNER_ARCH" == "arm64" ]]; then
-        GO_ARCH="arm64"
-    else
-        GO_ARCH="armv6l"
-    fi
-    wget -q https://go.dev/dl/go${GO_VERSION}.linux-${GO_ARCH}.tar.gz
-    sudo rm -rf /usr/local/go
-    sudo tar -C /usr/local -xzf go${GO_VERSION}.linux-${GO_ARCH}.tar.gz
-    rm go${GO_VERSION}.linux-${GO_ARCH}.tar.gz
-
-    # Add to PATH if not already there
-    if ! grep -q "/usr/local/go/bin" "$HOME/.bashrc"; then
-        echo 'export PATH=$PATH:/usr/local/go/bin' >> "$HOME/.bashrc"
-        export PATH=$PATH:/usr/local/go/bin
-    fi
-    echo "✓ Go installed: $(go version)"
-else
-    echo "✓ Go already installed: $(go version)"
-fi
+echo "✓ Dependencies installed"
 
 # Ensure user is in docker group
 echo ""

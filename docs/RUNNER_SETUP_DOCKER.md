@@ -22,15 +22,29 @@ git pull
 
 The script will:
 1. ✓ Check system compatibility
-2. ✓ Install dependencies (Go, git, etc.)
-3. ✓ Download the latest runner
-4. ✓ Register with GitHub
-5. ✓ Install as systemd service
-6. ✓ Start the runner
+2. ✓ Verify Docker is installed (required)
+3. ✓ Install basic tools (curl, jq, git)
+4. ✓ Download the latest runner
+5. ✓ Register with GitHub
+6. ✓ Install as systemd service
+7. ✓ Start the runner
 
 ## Prerequisites
 
-Before running the setup script:
+Before running the setup script, ensure:
+
+- **Docker** is installed (runner executes CI/CD jobs in containers)
+- **Git** is installed (runner needs to check out code)
+
+To install Docker:
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+# Log out and back in for group changes
+```
+
+Then:
 
 ### 1. Create GitHub Personal Access Token
 
