@@ -18,22 +18,36 @@ ENV PATH /go/bin:$PATH
 RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
 #RUN sudo modprobe bcm2835-v4l2
 
-# Install dependencies including GStreamer and libcamera for camera support
+# Install core dependencies
 RUN apt-get update && apt-get install -y \
     git \
     gcc \
     libc-dev \
     i2c-tools \
-    gstreamer1.0-tools \
-    gstreamer1.0-plugins-base \
-    gstreamer1.0-plugins-good \
-    gstreamer1.0-plugins-bad \
-    libgstreamer1.0-dev \
-    libgstreamer-plugins-base1.0-dev \
-    libcamera-dev \
-    libcamera-tools \
     v4l-utils \
     && rm -rf /var/lib/apt/lists/*
+
+# Install GStreamer (optional, for Pi Camera Module support)
+# These packages may not be available in all base images
+RUN apt-get update && \
+    (apt-get install -y \
+        gstreamer1.0-tools \
+        gstreamer1.0-plugins-base \
+        gstreamer1.0-plugins-good \
+        gstreamer1.0-plugins-bad \
+        libgstreamer1.0-dev \
+        libgstreamer-plugins-base1.0-dev \
+    || echo "Warning: GStreamer packages not available") && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install libcamera (optional, only available on Raspberry Pi OS)
+# Will fail gracefully if not available in the base image
+RUN apt-get update && \
+    (apt-get install -y \
+        libcamera-dev \
+        libcamera-tools \
+    || echo "Warning: libcamera packages not available (not needed for USB cameras)") && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/arabenjamin/gizmatron.git
 
