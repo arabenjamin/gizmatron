@@ -166,6 +166,27 @@ tar xzf "$RUNNER_FILE"
 rm "$RUNNER_FILE" checksums.txt
 echo "✓ Extracted runner"
 
+# Get runner registration token from GitHub API
+echo ""
+echo "🔑 Getting runner registration token from GitHub..."
+REGISTRATION_TOKEN=$(curl -s -X POST \
+    -H "Accept: application/vnd.github+json" \
+    -H "Authorization: Bearer $GITHUB_TOKEN" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    https://api.github.com/repos/arabenjamin/gizmatron/actions/runners/registration-token \
+    | jq -r '.token')
+
+if [ -z "$REGISTRATION_TOKEN" ] || [ "$REGISTRATION_TOKEN" == "null" ]; then
+    echo -e "${RED}❌ Failed to get registration token${NC}"
+    echo "Please check:"
+    echo "  1. Your PAT has 'repo' scope"
+    echo "  2. You have admin access to the repository"
+    echo "  3. The repository exists: https://github.com/arabenjamin/gizmatron"
+    exit 1
+fi
+
+echo "✓ Got registration token"
+
 # Configure runner
 echo ""
 echo "⚙️  Configuring runner..."
@@ -174,7 +195,7 @@ echo ""
 
 ./config.sh \
     --url https://github.com/arabenjamin/gizmatron \
-    --token "$GITHUB_TOKEN" \
+    --token "$REGISTRATION_TOKEN" \
     --name "gizmatron-pi" \
     --labels "self-hosted,Linux,ARM64,raspberry-pi" \
     --work "_work" \
