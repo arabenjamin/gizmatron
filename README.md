@@ -15,10 +15,7 @@ Also running on the oi is a Gihub actions runner, so that I can run my CI/CD pip
 
 
 
-## Current Problems:
- The camera is borked in GOCV
-
-## Prequisites
+## Prerequisites
 
 Currently Gizmatron runs on the raspberry pi 3 B+. There are plans for this to run on more recent platforms as well
 
@@ -28,8 +25,56 @@ Currently Gizmatron runs on the raspberry pi 3 B+. There are plans for this to r
 * OpenCV 4.11
 * Golang 1.23.5 arm64
 * GoCv latest
-* github.com/warthog618/go-gpiocdev  
+* github.com/warthog618/go-gpiocdev
 
+## Hardware Setup
+
+### Enable I2C for Robotic Arm
+
+The robotic arm uses I2C to communicate with the servo controller (PCA9685). Enable I2C on the Raspberry Pi:
+
+**Option 1: Using raspi-config (Recommended)**
+```bash
+sudo raspi-config
+# Navigate to: 3 Interface Options -> I5 I2C -> Yes
+sudo reboot
+```
+
+**Option 2: Manual Configuration**
+```bash
+# Enable I2C in boot config
+echo "dtparam=i2c_arm=on" | sudo tee -a /boot/firmware/config.txt
+echo "i2c-dev" | sudo tee -a /etc/modules
+sudo reboot
+```
+
+**Verify I2C is Working**
+```bash
+# Check device exists
+ls -la /dev/i2c*  # Should show /dev/i2c-1
+
+# Install tools
+sudo apt-get install -y i2c-tools
+
+# Scan for devices (servo controller should appear at 0x40)
+sudo i2cdetect -y 1
+
+# Add user to i2c group
+sudo usermod -aG i2c $USER
+# Log out and back in for group membership to take effect
+```
+
+### Enable Camera
+
+**For Raspberry Pi Camera Module (CSI):**
+```bash
+sudo raspi-config
+# Navigate to: 3 Interface Options -> Camera -> Yes
+sudo reboot
+```
+
+**For USB Webcam:**
+No configuration needed - plug and play.
 
 ## Building MultiPlatform docker image
 
